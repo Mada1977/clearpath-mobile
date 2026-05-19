@@ -6,7 +6,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
-import Markdown from 'react-native-markdown-display';
 import { useAuth } from '../../src/context/AuthContext';
 import { COLORS, API_BASE_URL } from '../../src/constants';
 
@@ -146,9 +145,9 @@ export default function ChatScreen() {
                   {item.content}
                 </Text>
               ) : (
-                <Markdown style={markdownStyles}>
-                  {item.content || (streaming ? '...' : '')}
-                </Markdown>
+                <Text style={[styles.bubbleText, styles.aiText]}>
+                  {renderBold(item.content || (streaming ? '...' : ''))}
+                </Text>
               )}
             </View>
           )}
@@ -176,17 +175,14 @@ export default function ChatScreen() {
   );
 }
 
-const markdownStyles = {
-  body:        { fontSize: 15, lineHeight: 22, color: COLORS.text },
-  strong:      { fontWeight: '700' as const },
-  em:          { fontStyle: 'italic' as const },
-  bullet_list: { marginVertical: 2 },
-  ordered_list:{ marginVertical: 2 },
-  list_item:   { marginVertical: 1 },
-  paragraph:   { marginVertical: 2 },
-  code_inline: { backgroundColor: COLORS.border, borderRadius: 4, paddingHorizontal: 4, fontSize: 13 },
-  fence:       { backgroundColor: COLORS.border, borderRadius: 6, padding: 8, fontSize: 13 },
-};
+function renderBold(text: string) {
+  const parts = text.split(/\*\*(.+?)\*\*/s);
+  return parts.map((part, i) =>
+    i % 2 === 1
+      ? <Text key={i} style={styles.bold}>{part}</Text>
+      : part
+  );
+}
 
 const styles = StyleSheet.create({
   safe:        { flex: 1, backgroundColor: COLORS.background },
@@ -201,6 +197,7 @@ const styles = StyleSheet.create({
   userBubble:  { backgroundColor: COLORS.primary, alignSelf: 'flex-end', borderBottomRightRadius: 4 },
   aiBubble:    { backgroundColor: COLORS.card, alignSelf: 'flex-start', borderBottomLeftRadius: 4, borderWidth: 1, borderColor: COLORS.border },
   bubbleText:  { fontSize: 15, lineHeight: 22 },
+  bold:        { fontWeight: '700' as const },
   userText:    { color: '#fff' },
   aiText:      { color: COLORS.text },
   inputRow:    { flexDirection: 'row', alignItems: 'flex-end', padding: 12, borderTopWidth: 1, borderTopColor: COLORS.border, backgroundColor: COLORS.card, gap: 10 },
