@@ -3,6 +3,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
+import { PremiumProvider } from '../src/context/PremiumContext';
 import { registerPushToken, markActive, scheduleLocalNotification, cancelAllScheduled } from '../src/services/notifications';
 
 function RootLayoutNav() {
@@ -51,6 +52,8 @@ function RootLayoutNav() {
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="onboarding" />
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="paywall" />
+      <Stack.Screen name="supporter-dashboard" />
     </Stack>
   );
 }
@@ -58,8 +61,10 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <StatusBar style="auto" />
-      <RootLayoutNav />
+      <PremiumProvider>
+        <StatusBar style="auto" />
+        <RootLayoutNav />
+      </PremiumProvider>
     </AuthProvider>
   );
 }

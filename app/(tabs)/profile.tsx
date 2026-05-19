@@ -5,8 +5,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
+import { usePremium } from '../../src/context/PremiumContext';
 import api from '../../src/services/api';
 import { COLORS, ADDICTIONS, STAGES } from '../../src/constants';
 import { useLanguage } from '../../src/hooks/useLanguage';
@@ -24,6 +25,8 @@ type SupporterLink = {
 export default function ProfileScreen() {
   const { user, logout, refreshUser } = useAuth();
   const { currentLanguage, setLanguage } = useLanguage();
+  const { isPremium, isOnTrial, trialDaysLeft } = usePremium();
+  const router = useRouter();
 
   const [saving, setSaving] = useState(false);
   const [langModalVisible, setLangModalVisible] = useState(false);
@@ -158,10 +161,17 @@ export default function ProfileScreen() {
           </View>
           <Text style={styles.name}>{user?.name || 'Anonymous'}</Text>
           <Text style={styles.email}>{user?.email}</Text>
-          {user?.isPremium && (
+          {isPremium ? (
             <View style={styles.premiumBadge}>
-              <Text style={styles.premiumText}>⭐ Premium</Text>
+              <Text style={styles.premiumText}>
+                {isOnTrial ? `⭐ Free Trial — ${trialDaysLeft} day${trialDaysLeft !== 1 ? 's' : ''} left` : '⭐ Premium'}
+              </Text>
             </View>
+          ) : (
+            <TouchableOpacity style={styles.goPremiumBtn} onPress={() => router.push('/paywall')}>
+              <Ionicons name="star-outline" size={14} color="#fff" />
+              <Text style={styles.goPremiumText}>Go Premium</Text>
+            </TouchableOpacity>
           )}
         </View>
 
@@ -329,6 +339,8 @@ const styles = StyleSheet.create({
   email:           { fontSize: 13, color: COLORS.textMuted, marginTop: 2 },
   premiumBadge:    { marginTop: 10, backgroundColor: '#FEF3C7', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20 },
   premiumText:     { color: '#92400E', fontSize: 12, fontWeight: '700' },
+  goPremiumBtn:    { marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20 },
+  goPremiumText:   { color: '#fff', fontSize: 13, fontWeight: '700' },
   sectionLabel:    { fontSize: 14, fontWeight: '600', color: COLORS.textMuted, marginBottom: 10, marginTop: 18 },
   langRow:         { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, borderWidth: 1, borderColor: COLORS.border, marginBottom: 8 },
   langFlag:        { fontSize: 28, marginRight: 14 },

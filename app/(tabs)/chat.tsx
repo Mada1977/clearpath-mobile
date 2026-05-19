@@ -7,17 +7,26 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import { useAuth } from '../../src/context/AuthContext';
+import { usePremium } from '../../src/context/PremiumContext';
 import { COLORS, API_BASE_URL } from '../../src/constants';
+import { UpgradePrompt } from '../../src/components/UpgradePrompt';
+
+const FREE_DAILY_LIMIT = 10;
+const UPGRADE_PROMPT_THRESHOLD = 3;
 
 type Message = { id: string; role: 'user' | 'assistant'; content: string };
 
 export default function ChatScreen() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
+  const { isPremium, messagesUsedToday } = usePremium();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
   const [crisis, setCrisis] = useState<any>(null);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [lastMessage, setLastMessage] = useState('');
   const listRef = useRef<FlatList>(null);
+  const sessionMessageCount = useRef(0);
 
   useEffect(() => {
     loadHistory();
@@ -43,7 +52,16 @@ export default function ChatScreen() {
   async function sendMessage() {
     if (!input.trim() || streaming) return;
 
-    const userMsg: Message = { id: Date.now().toString(), role: 'user', content: input.trim() };
+    const trimmed = input.trim();
+    setLastMessage(trimmed);
+
+    // Hard limit reached
+    if (!isPremium && messagesUsedToday >= FREE_DAILY_LIMIT) {
+      setShowUpgrade(true);
+      return;
+    }
+
+    const userMsg: Message = { id: Date.now().toString(), role: 'user', content: trimmed };
     const assistantId = (Date.now() + 1).toString();
     const assistantMsg: Message = { id: assistantId, role: 'assistant', content: '' };
 
@@ -101,6 +119,13 @@ export default function ChatScreen() {
         setStreaming(false);
         setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
         resolve();
+        // Show upgrade prompt after 3rd message in session for free users
+        sessionMessageCount.current += 1;
+        if (!isPremium && sessionMessageCount.current >= UPGRADE_PROMPT_THRESHOLD) {
+          refreshUser(); // refresh to get updated aiMessagesUsedToday
+          setTimeout(() => setShowUpgrade(true), 600);
+          sessionMessageCount.current = 0;
+        }
       };
 
       xhr.onerror = () => {
@@ -115,12 +140,25 @@ export default function ChatScreen() {
     });
   }
 
+  const remainingMessages = Math.max(0, FREE_DAILY_LIMIT - messagesUsedToday);
+
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>AI Coach</Text>
         <Text style={styles.headerSub}>Powered by Claude</Text>
       </View>
+
+      {!isPremium && messagesUsedToday > 0 && (
+        <TouchableOpacity style={styles.limitBanner} onPress={() => setShowUpgrade(true)} activeOpacity={0.8}>
+          <Text style={styles.limitBannerText}>
+            {remainingMessages > 0
+              ? `${remainingMessages} free message${remainingMessages !== 1 ? 's' : ''} left today`
+              : 'Daily limit reached — tap to upgrade'}
+          </Text>
+          <Ionicons name="chevron-forward" size={14} color={remainingMessages > 0 ? COLORS.textMuted : COLORS.danger} />
+        </TouchableOpacity>
+      )}
 
       {crisis && (
         <View style={styles.crisisBox}>
@@ -130,6 +168,12 @@ export default function ChatScreen() {
           ))}
         </View>
       )}
+
+      <UpgradePrompt
+        visible={showUpgrade}
+        onClose={() => setShowUpgrade(false)}
+        triggerMessage={lastMessage}
+      />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <FlatList
@@ -189,6 +233,8 @@ const styles = StyleSheet.create({
   header:      { padding: 20, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border, backgroundColor: COLORS.card },
   headerTitle: { fontSize: 20, fontWeight: '800', color: COLORS.text },
   headerSub:   { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  limitBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 7, backgroundColor: COLORS.background, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  limitBannerText: { fontSize: 12, color: COLORS.textMuted },
   crisisBox:   { backgroundColor: '#FEF2F2', borderLeftWidth: 4, borderLeftColor: COLORS.danger, padding: 16, margin: 12, borderRadius: 8 },
   crisisTitle: { color: COLORS.danger, fontWeight: '700', marginBottom: 6 },
   crisisLine:  { color: '#7F1D1D', fontSize: 13, marginBottom: 2 },
