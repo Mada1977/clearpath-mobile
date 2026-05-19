@@ -3,6 +3,7 @@ import {
   View, Text, TouchableOpacity, Modal, StyleSheet, Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { getHelplinesByLocale } from '../constants/helplines';
 import { COLORS } from '../constants';
@@ -12,6 +13,7 @@ export function CrisisButton() {
   const { user } = useAuth();
   const [visible, setVisible] = useState(false);
   const helplines = getHelplinesByLocale(user?.locale ?? 'en-US');
+  const insets = useSafeAreaInsets();
 
   function call(number: string) {
     Linking.openURL(`tel:${number.replace(/\s/g, '')}`);
@@ -31,13 +33,13 @@ export function CrisisButton() {
   return (
     <>
       <TouchableOpacity
-        style={styles.fab}
+        style={[styles.fab, { top: insets.top + 12 }]}
         onPress={openModal}
         activeOpacity={0.85}
         accessibilityLabel="Crisis helplines"
         accessibilityRole="button"
       >
-        <Ionicons name="call" size={22} color="#fff" />
+        <Ionicons name="call" size={20} color="#fff" />
       </TouchableOpacity>
 
       <Modal
@@ -89,11 +91,11 @@ export function CrisisButton() {
 const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
-    bottom: 80,
+    top: 12,       // overridden at runtime with insets.top + 12
     right: 16,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: COLORS.danger,
     alignItems: 'center',
     justifyContent: 'center',
