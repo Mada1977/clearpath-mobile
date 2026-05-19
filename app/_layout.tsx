@@ -3,11 +3,27 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
+import { registerPushToken, markActive, scheduleLocalNotification, cancelAllScheduled } from '../src/services/notifications';
 
 function RootLayoutNav() {
   const { user, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      registerPushToken();
+      markActive();
+      // Schedule a local reminder 24h from now; cancel any stale one first
+      cancelAllScheduled().then(() => {
+        scheduleLocalNotification(
+          'How are you doing today? 💙',
+          'Open Bravely Path to log your progress and chat with your AI coach.',
+          24,
+        );
+      });
+    }
+  }, [isLoading, user]);
 
   useEffect(() => {
     if (isLoading) return;
