@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { getHelplinesByLocale } from '../constants/helplines';
 import { COLORS } from '../constants';
+import { pauseMusic, getMusicEnabled, playMusic } from '../services/audioPlayer';
 
 export function CrisisButton() {
   const { user } = useAuth();
@@ -16,11 +17,22 @@ export function CrisisButton() {
     Linking.openURL(`tel:${number.replace(/\s/g, '')}`);
   }
 
+  async function openModal() {
+    await pauseMusic();
+    setVisible(true);
+  }
+
+  async function closeModal() {
+    setVisible(false);
+    const enabled = await getMusicEnabled();
+    if (enabled) await playMusic();
+  }
+
   return (
     <>
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => setVisible(true)}
+        onPress={openModal}
         activeOpacity={0.85}
         accessibilityLabel="Crisis helplines"
         accessibilityRole="button"
@@ -32,18 +44,18 @@ export function CrisisButton() {
         visible={visible}
         transparent
         animationType="fade"
-        onRequestClose={() => setVisible(false)}
+        onRequestClose={closeModal}
       >
         <TouchableOpacity
           style={styles.overlay}
           activeOpacity={1}
-          onPress={() => setVisible(false)}
+          onPress={closeModal}
         >
           <TouchableOpacity activeOpacity={1} onPress={() => {}}>
             <View style={styles.sheet}>
               <View style={styles.sheetHeader}>
                 <Text style={styles.sheetTitle}>Crisis helplines</Text>
-                <TouchableOpacity onPress={() => setVisible(false)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <TouchableOpacity onPress={closeModal} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                   <Ionicons name="close" size={24} color={COLORS.textMuted} />
                 </TouchableOpacity>
               </View>

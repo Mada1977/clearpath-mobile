@@ -9,6 +9,7 @@ import { useOffline } from '../../src/hooks/useOffline';
 import { cacheStats, getCachedStats, cacheCopingTips } from '../../src/services/offlineCache';
 import { useRouter } from 'expo-router';
 import { StabilityScore } from '../../src/components/StabilityScore';
+import { getMusicEnabled, loadMusic, playMusic, pauseMusic, toggleMusic } from '../../src/services/audioPlayer';
 
 type TrackerSummary = { id: string; category: string; name: string | null; daysSober: number };
 type StabilityData  = { score: number; label: string };
@@ -33,12 +34,26 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [trackers, setTrackers]   = useState<TrackerSummary[]>([]);
   const [stability, setStability] = useState<StabilityData | null>(null);
+  const [musicOn, setMusicOn] = useState(false);
 
   useEffect(() => {
     fetchStats();
     fetchTrackers();
     fetchStability();
+    initMusic();
   }, []);
+
+  async function initMusic() {
+    await loadMusic();
+    const enabled = await getMusicEnabled();
+    setMusicOn(enabled);
+    if (enabled) await playMusic();
+  }
+
+  async function handleMusicToggle() {
+    const next = await toggleMusic();
+    setMusicOn(next);
+  }
 
   useEffect(() => {
     if (!isOffline) { fetchStats(); fetchTrackers(); fetchStability(); }
@@ -100,8 +115,15 @@ export default function HomeScreen() {
         </View>
       )}
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.greeting}>{greeting()}, {user?.name || 'friend'}</Text>
-        <Text style={styles.sub}>Keep going — every day counts.</Text>
+        <View style={styles.greetingRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.greeting}>{greeting()}, {user?.name || 'friend'}</Text>
+            <Text style={styles.sub}>Keep going — every day counts.</Text>
+          </View>
+          <TouchableOpacity style={styles.musicBtn} onPress={handleMusicToggle} activeOpacity={0.7}>
+            <Ionicons name={musicOn ? 'musical-notes' : 'musical-notes-outline'} size={20} color={musicOn ? COLORS.primary : COLORS.textMuted} />
+          </TouchableOpacity>
+        </View>
 
         {/* Streak card */}
         <View style={styles.streakCard}>
@@ -183,8 +205,10 @@ const styles = StyleSheet.create({
   trackerIcon:       { fontSize: 20, marginBottom: 2 },
   trackerDays:       { fontSize: 13, fontWeight: '700', color: COLORS.primary },
   container:    { padding: 24 },
+  greetingRow:  { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 28 },
   greeting:     { fontSize: 24, fontWeight: '800', color: COLORS.text, marginBottom: 4 },
-  sub:          { fontSize: 14, color: COLORS.textMuted, marginBottom: 28 },
+  sub:          { fontSize: 14, color: COLORS.textMuted },
+  musicBtn:     { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.card, alignItems: 'center', justifyContent: 'center', marginTop: 4, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, elevation: 1 },
   streakCard:   { backgroundColor: COLORS.card, borderRadius: 16, padding: 28, alignItems: 'center', marginBottom: 16, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
   streakNumber: { fontSize: 56, fontWeight: '900', color: COLORS.primary, lineHeight: 64 },
   streakLabel:  { fontSize: 16, color: COLORS.textMuted, marginTop: 4 },

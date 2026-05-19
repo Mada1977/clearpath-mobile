@@ -5,11 +5,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import api from '../../src/services/api';
 import { COLORS, ADDICTIONS } from '../../src/constants';
 import { useOffline } from '../../src/hooks/useOffline';
 import { getCachedCopingTips } from '../../src/services/offlineCache';
+import { pauseMusic, getMusicEnabled, playMusic } from '../../src/services/audioPlayer';
 
 const TIMER_SECONDS = 5 * 60; // 5 minutes
 
@@ -33,6 +35,14 @@ export default function SosScreen() {
   const minutesLeft = Math.floor(seconds / 60);
   const secsLeft    = seconds % 60;
   const progress    = (TIMER_SECONDS - seconds) / TIMER_SECONDS;
+
+  // Pause music when SOS screen is focused, resume when leaving
+  useFocusEffect(useCallback(() => {
+    pauseMusic();
+    return () => {
+      getMusicEnabled().then(enabled => { if (enabled) playMusic(); });
+    };
+  }, []));
 
   const stopTimer = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
