@@ -4,39 +4,50 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const MUSIC_PREF_KEY = 'bp_music_enabled';
 let soundObj: Audio.Sound | null = null;
 let isLoaded = false;
+let loadFailed = false;
 
 export async function getMusicEnabled(): Promise<boolean> {
   const val = await AsyncStorage.getItem(MUSIC_PREF_KEY);
-  // Default: off
-  return val === 'true';
+  // Default: ON (null means first launch)
+  return val === null ? true : val === 'true';
 }
 
 export async function setMusicEnabled(enabled: boolean): Promise<void> {
   await AsyncStorage.setItem(MUSIC_PREF_KEY, enabled ? 'true' : 'false');
 }
 
-export async function loadMusic(): Promise<void> {
-  if (isLoaded) return;
+export async function loadMusic(): Promise<boolean> {
+  if (isLoaded) return true;
+  if (loadFailed) return false;
   try {
     await Audio.setAudioModeAsync({
       playsInSilentModeIOS: true,
       staysActiveInBackground: false,
     });
+    // File must exist at: assets/sounds/background.mp3
     const { sound } = await Audio.Sound.createAsync(
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       require('../../assets/sounds/background.mp3'),
       { isLooping: true, volume: 0.35, shouldPlay: false }
     );
     soundObj = sound;
     isLoaded = true;
-  } catch {}
+    return true;
+  } catch (err) {
+    loadFailed = true;
+    console.warn('[AudioPlayer] Could not load background.mp3:', err);
+    return false;
+  }
 }
 
 export async function playMusic(): Promise<void> {
-  if (!isLoaded) await loadMusic();
+  const ok = await loadMusic();
+  if (!ok) return;
   try {
-    const enabled = await getMusicEnabled();
-    if (enabled && soundObj) await soundObj.playAsync();
-  } catch {}
+    if (soundObj) await soundObj.playAsync();
+  } catch (err) {
+    console.warn('[AudioPlayer] playMusic error:', err);
+  }
 }
 
 export async function pauseMusic(): Promise<void> {
@@ -72,6 +83,11 @@ export async function unloadMusic(): Promise<void> {
       await soundObj.unloadAsync();
       soundObj = null;
       isLoaded = false;
+      loadFailed = false;
     }
   } catch {}
+}
+
+export function isMusicAvailable(): boolean {
+  return !loadFailed;
 }

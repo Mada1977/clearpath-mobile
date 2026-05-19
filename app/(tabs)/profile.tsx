@@ -1,7 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Alert, ActivityIndicator, TextInput, Modal, Share,
+  Alert, ActivityIndicator, TextInput, Modal, Share, Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +12,9 @@ import api from '../../src/services/api';
 import { COLORS, ADDICTIONS, STAGES } from '../../src/constants';
 import { useLanguage } from '../../src/hooks/useLanguage';
 import { LanguagePickerModal } from '../../src/components/LanguagePickerModal';
+import {
+  getMusicEnabled, toggleMusic, loadMusic, isMusicAvailable,
+} from '../../src/services/audioPlayer';
 
 type SupporterLink = {
   id: string;
@@ -41,8 +44,26 @@ export default function ProfileScreen() {
   const [shareMood, setShareMood] = useState(false);
   const [inviting, setInviting] = useState(false);
 
+  // Music settings
+  const [musicEnabled, setMusicEnabled] = useState(false);
+  const [musicUnavailable, setMusicUnavailable] = useState(false);
+
+  useEffect(() => {
+    loadMusic().then(ok => {
+      setMusicUnavailable(!ok);
+    });
+    getMusicEnabled().then(setMusicEnabled);
+  }, []);
+
+  async function handleMusicToggle(val: boolean) {
+    setMusicEnabled(val);
+    await toggleMusic();
+    if (!isMusicAvailable()) setMusicUnavailable(true);
+  }
+
   useFocusEffect(useCallback(() => {
     loadSupporters();
+    getMusicEnabled().then(setMusicEnabled);
   }, []));
 
   async function loadSupporters() {
@@ -216,6 +237,36 @@ export default function ProfileScreen() {
           ))}
         </View>
 
+        {/* Settings */}
+        <Text style={styles.sectionLabel}>Settings</Text>
+        <View style={styles.card}>
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="musical-notes-outline" size={20} color={COLORS.primary} />
+              <View style={{ marginLeft: 12 }}>
+                <Text style={styles.settingLabel}>Background music</Text>
+                <Text style={styles.settingSub}>
+                  {musicUnavailable
+                    ? 'Place background.mp3 in assets/sounds/ to enable'
+                    : 'Calming music while you use the app'}
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={musicEnabled && !musicUnavailable}
+              onValueChange={handleMusicToggle}
+              disabled={musicUnavailable}
+              trackColor={{ false: COLORS.border, true: COLORS.primary + '80' }}
+              thumbColor={musicEnabled && !musicUnavailable ? COLORS.primary : '#f4f3f4'}
+            />
+          </View>
+          {musicUnavailable && (
+            <Text style={styles.settingWarn}>
+              audio file missing — add assets/sounds/background.mp3 and rebuild
+            </Text>
+          )}
+        </View>
+
         <TouchableOpacity style={styles.saveButton} onPress={saveProfile} disabled={saving}>
           {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>Save changes</Text>}
         </TouchableOpacity>
@@ -356,6 +407,13 @@ const styles = StyleSheet.create({
   saveButtonText:  { color: '#fff', fontSize: 16, fontWeight: '700' },
   logoutButton:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 20, paddingVertical: 14 },
   logoutText:      { color: COLORS.danger, fontSize: 15, fontWeight: '600' },
+
+  // Settings
+  settingRow:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  settingLeft:         { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  settingLabel:        { fontSize: 15, fontWeight: '600', color: COLORS.text },
+  settingSub:          { fontSize: 12, color: COLORS.textMuted, marginTop: 1, maxWidth: 220 },
+  settingWarn:         { fontSize: 11, color: COLORS.warning, marginTop: 8, fontStyle: 'italic' },
 
   // Supporters
   supportersDesc:      { fontSize: 13, color: COLORS.textMuted, lineHeight: 18, marginBottom: 14 },
