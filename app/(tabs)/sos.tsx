@@ -8,11 +8,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/context/AuthContext';
 import api from '../../src/services/api';
 import { COLORS, ADDICTIONS } from '../../src/constants';
+import { useOffline } from '../../src/hooks/useOffline';
+import { getCachedCopingTips } from '../../src/services/offlineCache';
 
 const TIMER_SECONDS = 5 * 60; // 5 minutes
 
 export default function SosScreen() {
   const { user } = useAuth();
+  const { isOffline } = useOffline();
   const [active, setActive]       = useState(false);
   const [seconds, setSeconds]     = useState(TIMER_SECONDS);
   const [steps, setSteps]         = useState<string[]>([]);
@@ -50,10 +53,16 @@ export default function SosScreen() {
   async function loadSteps(addiction: string) {
     setLoadingSteps(true);
     try {
-      const { data } = await api.get(`/ai/sos/${addiction}`);
-      setSteps(Array.isArray(data.steps) ? data.steps : []);
+      if (isOffline) {
+        const tips = await getCachedCopingTips();
+        setSteps(tips);
+      } else {
+        const { data } = await api.get(`/ai/sos/${addiction}`);
+        setSteps(Array.isArray(data.steps) ? data.steps : []);
+      }
     } catch {
-      setSteps([]);
+      const tips = await getCachedCopingTips();
+      setSteps(tips.length ? tips : []);
     } finally {
       setLoadingSteps(false);
     }

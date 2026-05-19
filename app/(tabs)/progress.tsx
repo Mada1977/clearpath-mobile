@@ -7,6 +7,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/context/AuthContext';
 import api from '../../src/services/api';
 import { COLORS } from '../../src/constants';
+import { useOffline } from '../../src/hooks/useOffline';
+import { getCachedStats } from '../../src/services/offlineCache';
 
 type Stats = {
   streak: number;
@@ -32,17 +34,32 @@ const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default function ProgressScreen() {
   const { user } = useAuth();
+  const { isOffline } = useOffline();
   const [stats, setStats]     = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetchStats(); }, []);
 
+  useEffect(() => {
+    if (!isOffline) fetchStats();
+  }, [isOffline]);
+
   async function fetchStats() {
+    if (isOffline) {
+      const cached = await getCachedStats();
+      if (cached) setStats(cached);
+      setLoading(false);
+      return;
+    }
     try {
       const { data } = await api.get('/users/me/stats');
       setStats(data);
-    } catch {}
-    finally { setLoading(false); }
+    } catch {
+      const cached = await getCachedStats();
+      if (cached) setStats(cached);
+    } finally {
+      setLoading(false);
+    }
   }
 
   const streak        = stats?.streak ?? 0;

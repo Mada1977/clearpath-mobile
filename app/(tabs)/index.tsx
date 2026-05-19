@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/context/AuthContext';
 import api from '../../src/services/api';
 import { COLORS, ADDICTIONS } from '../../src/constants';
+import { useOffline } from '../../src/hooks/useOffline';
+import { cacheStats, getCachedStats, cacheCopingTips } from '../../src/services/offlineCache';
 
 type Stats = {
   streak: number;
@@ -15,6 +17,7 @@ type Stats = {
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  const { isOffline } = useOffline();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -22,12 +25,26 @@ export default function HomeScreen() {
     fetchStats();
   }, []);
 
+  // Re-fetch when coming back online
+  useEffect(() => {
+    if (!isOffline) fetchStats();
+  }, [isOffline]);
+
   async function fetchStats() {
+    if (isOffline) {
+      const cached = await getCachedStats();
+      if (cached) setStats(cached);
+      setLoading(false);
+      return;
+    }
     try {
       const { data } = await api.get('/users/me/stats');
       setStats(data);
+      cacheStats(data);
+      if (user?.locale) cacheCopingTips(user.locale);
     } catch {
-      // stats unavailable, show empty state
+      const cached = await getCachedStats();
+      if (cached) setStats(cached);
     } finally {
       setLoading(false);
     }
@@ -47,6 +64,12 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      {isOffline && (
+        <View style={styles.offlineBanner}>
+          <Ionicons name="cloud-offline-outline" size={14} color="#fff" />
+          <Text style={styles.offlineBannerText}>Offline mode — showing cached data</Text>
+        </View>
+      )}
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.greeting}>{greeting()}, {user?.name || 'friend'}</Text>
         <Text style={styles.sub}>Keep going — every day counts.</Text>
@@ -103,7 +126,9 @@ function Row({ icon, label, value }: { icon: any; label: string; value: string }
 }
 
 const styles = StyleSheet.create({
-  safe:         { flex: 1, backgroundColor: COLORS.background },
+  safe:           { flex: 1, backgroundColor: COLORS.background },
+  offlineBanner:  { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.textMuted, paddingHorizontal: 16, paddingVertical: 6 },
+  offlineBannerText: { color: '#fff', fontSize: 12, fontWeight: '500' },
   container:    { padding: 24 },
   greeting:     { fontSize: 24, fontWeight: '800', color: COLORS.text, marginBottom: 4 },
   sub:          { fontSize: 14, color: COLORS.textMuted, marginBottom: 28 },
