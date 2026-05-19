@@ -8,8 +8,10 @@ import { COLORS, ADDICTIONS } from '../../src/constants';
 import { useOffline } from '../../src/hooks/useOffline';
 import { cacheStats, getCachedStats, cacheCopingTips } from '../../src/services/offlineCache';
 import { useRouter } from 'expo-router';
+import { StabilityScore } from '../../src/components/StabilityScore';
 
 type TrackerSummary = { id: string; category: string; name: string | null; daysSober: number };
+type StabilityData  = { score: number; label: string };
 
 type Stats = {
   streak: number;
@@ -29,21 +31,31 @@ export default function HomeScreen() {
   const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [trackers, setTrackers] = useState<TrackerSummary[]>([]);
+  const [trackers, setTrackers]   = useState<TrackerSummary[]>([]);
+  const [stability, setStability] = useState<StabilityData | null>(null);
 
   useEffect(() => {
     fetchStats();
     fetchTrackers();
+    fetchStability();
   }, []);
 
   useEffect(() => {
-    if (!isOffline) { fetchStats(); fetchTrackers(); }
+    if (!isOffline) { fetchStats(); fetchTrackers(); fetchStability(); }
   }, [isOffline]);
 
   async function fetchTrackers() {
     try {
       const { data } = await api.get('/trackers');
       setTrackers(data.trackers.slice(0, 4));
+    } catch {}
+  }
+
+  async function fetchStability() {
+    if (isOffline) return;
+    try {
+      const { data } = await api.get('/users/me/stability-score');
+      setStability({ score: data.score, label: data.label });
     } catch {}
   }
 
@@ -119,6 +131,11 @@ export default function HomeScreen() {
             <Text style={styles.statLabel}>Slips</Text>
           </View>
         </View>
+
+        {/* Stability score */}
+        {stability && (
+          <StabilityScore score={stability.score} label={stability.label} />
+        )}
 
         {/* Tracker summary */}
         {trackers.length > 0 && (
