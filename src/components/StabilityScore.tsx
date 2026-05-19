@@ -48,7 +48,7 @@ export function StabilityScore({ score, label }: Props) {
     <>
       <TouchableOpacity style={styles.container} onPress={() => setInfoVisible(true)} activeOpacity={0.85}>
         <Text style={styles.heading}>Daily stability score</Text>
-        <Svg width={W} height={90} viewBox={`0 12 ${W} 90`}>
+        <Svg width={W} height={94} viewBox={`0 0 ${W} 94`}>
           {/* Track */}
           <Path d={TRACK_D} fill="none" stroke={COLORS.border} strokeWidth={SW} strokeLinecap="round" />
           {/* Fill */}

@@ -102,8 +102,10 @@ export default function HomeScreen() {
         </View>
       )}
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.greeting}>{greeting()}, {user?.name || 'friend'}</Text>
-        <Text style={styles.sub}>Keep going — every day counts.</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.greeting}>{greeting()}, {user?.name || 'friend'}</Text>
+          <Text style={styles.sub}>Keep going — every day counts.</Text>
+        </View>
 
         {/* Streak card */}
         <View style={styles.streakCard}>
@@ -118,18 +120,27 @@ export default function HomeScreen() {
           )}
         </View>
 
+        {stats?.streak === 0 && (
+          <View style={styles.encourageBox}>
+            <Text style={styles.encourageText}>Every journey starts with day 1 — you've got this! 💪</Text>
+          </View>
+        )}
+
         {/* Stats row */}
         <View style={styles.statsRow}>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{stats?.totalResisted ?? 0}</Text>
+          <View style={[styles.statBox, { borderTopWidth: 3, borderTopColor: COLORS.secondary }]}>
+            <Ionicons name="checkmark-circle-outline" size={20} color={COLORS.secondary} style={{ marginBottom: 4 }} />
+            <Text style={[styles.statNumber, { color: COLORS.secondary }]}>{stats?.totalResisted ?? 0}</Text>
             <Text style={styles.statLabel}>Resisted</Text>
           </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{stats?.totalSos ?? 0}</Text>
+          <View style={[styles.statBox, { borderTopWidth: 3, borderTopColor: COLORS.primary }]}>
+            <Ionicons name="flash-outline" size={20} color={COLORS.primary} style={{ marginBottom: 4 }} />
+            <Text style={[styles.statNumber, { color: COLORS.primary }]}>{stats?.totalSos ?? 0}</Text>
             <Text style={styles.statLabel}>SOS used</Text>
           </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>{stats?.totalUsed ?? 0}</Text>
+          <View style={[styles.statBox, { borderTopWidth: 3, borderTopColor: '#F59E0B' }]}>
+            <Ionicons name="alert-circle-outline" size={20} color="#F59E0B" style={{ marginBottom: 4 }} />
+            <Text style={[styles.statNumber, { color: '#F59E0B' }]}>{stats?.totalUsed ?? 0}</Text>
             <Text style={styles.statLabel}>Slips</Text>
           </View>
         </View>
@@ -140,8 +151,8 @@ export default function HomeScreen() {
         )}
 
         {/* Tracker summary */}
-        {trackers.length > 0 && (
-          <TouchableOpacity style={styles.card} onPress={() => router.push('/(tabs)/trackers')} activeOpacity={0.8}>
+        {trackers.length > 0 ? (
+          <TouchableOpacity style={[styles.card, { marginBottom: 16 }]} onPress={() => router.push('/(tabs)/trackers')} activeOpacity={0.8}>
             <Text style={styles.cardTitle}>Active trackers</Text>
             <View style={styles.trackerRow}>
               {trackers.map(t => (
@@ -151,6 +162,11 @@ export default function HomeScreen() {
                 </View>
               ))}
             </View>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.emptyTrackerCard} onPress={() => router.push('/(tabs)/trackers')} activeOpacity={0.8}>
+            <Ionicons name="add-circle-outline" size={26} color={COLORS.primary} />
+            <Text style={styles.emptyTrackerText}>Tap + to add your first tracker</Text>
           </TouchableOpacity>
         )}
 
@@ -185,15 +201,20 @@ const styles = StyleSheet.create({
   trackerIcon:       { fontSize: 20, marginBottom: 2 },
   trackerDays:       { fontSize: 13, fontWeight: '700', color: COLORS.primary },
   container:    { padding: 24 },
+  headerRow:    { paddingRight: 56, marginBottom: 0 },
   greeting:     { fontSize: 24, fontWeight: '800', color: COLORS.text, marginBottom: 4 },
   sub:          { fontSize: 14, color: COLORS.textMuted, marginBottom: 28 },
   streakCard:   { backgroundColor: COLORS.card, borderRadius: 16, padding: 28, alignItems: 'center', marginBottom: 16, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
   streakNumber: { fontSize: 56, fontWeight: '900', color: COLORS.primary, lineHeight: 64 },
   streakLabel:  { fontSize: 16, color: COLORS.textMuted, marginTop: 4 },
+  encourageBox: { backgroundColor: '#EFF6FF', borderRadius: 12, padding: 14, marginBottom: 16, borderLeftWidth: 4, borderLeftColor: COLORS.primary },
+  encourageText:{ fontSize: 14, color: COLORS.primary, fontWeight: '600', lineHeight: 20 },
   statsRow:     { flexDirection: 'row', gap: 12, marginBottom: 16 },
-  statBox:      { flex: 1, backgroundColor: COLORS.card, borderRadius: 12, padding: 16, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
+  statBox:      { flex: 1, backgroundColor: COLORS.card, borderRadius: 12, padding: 14, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 4, elevation: 1, overflow: 'hidden' },
   statNumber:   { fontSize: 26, fontWeight: '800', color: COLORS.text },
   statLabel:    { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  emptyTrackerCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: COLORS.card, borderRadius: 16, padding: 20, marginBottom: 16, borderWidth: 1.5, borderColor: COLORS.primary, borderStyle: 'dashed' },
+  emptyTrackerText: { fontSize: 15, fontWeight: '600', color: COLORS.primary },
   card:         { backgroundColor: COLORS.card, borderRadius: 16, padding: 20, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
   cardTitle:    { fontSize: 16, fontWeight: '700', color: COLORS.text, marginBottom: 16 },
   row:          { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
