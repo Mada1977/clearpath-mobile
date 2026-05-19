@@ -12,6 +12,7 @@ import api from '../../src/services/api';
 import { COLORS, ADDICTIONS, STAGES } from '../../src/constants';
 import { useLanguage } from '../../src/hooks/useLanguage';
 import { LanguagePickerModal } from '../../src/components/LanguagePickerModal';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getMusicEnabled, toggleMusic, loadMusic, isMusicAvailable,
 } from '../../src/services/audioPlayer';
@@ -47,18 +48,27 @@ export default function ProfileScreen() {
   // Music settings
   const [musicEnabled, setMusicEnabled] = useState(false);
   const [musicUnavailable, setMusicUnavailable] = useState(false);
+  const [ttsEnabled, setTtsEnabled] = useState(true);
 
   useEffect(() => {
     loadMusic().then(ok => {
       setMusicUnavailable(!ok);
     });
     getMusicEnabled().then(setMusicEnabled);
+    AsyncStorage.getItem('bp_tts_enabled').then(val => {
+      setTtsEnabled(val === null ? true : val === 'true');
+    });
   }, []);
 
   async function handleMusicToggle(val: boolean) {
     setMusicEnabled(val);
     await toggleMusic();
     if (!isMusicAvailable()) setMusicUnavailable(true);
+  }
+
+  async function handleTtsToggle(val: boolean) {
+    setTtsEnabled(val);
+    await AsyncStorage.setItem('bp_tts_enabled', val ? 'true' : 'false');
   }
 
   useFocusEffect(useCallback(() => {
@@ -265,6 +275,22 @@ export default function ProfileScreen() {
               audio file missing — add assets/sounds/background.mp3 and rebuild
             </Text>
           )}
+
+          <View style={[styles.settingRow, { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: COLORS.border }]}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="volume-medium-outline" size={20} color={COLORS.primary} />
+              <View style={{ marginLeft: 12 }}>
+                <Text style={styles.settingLabel}>Read responses aloud</Text>
+                <Text style={styles.settingSub}>AI Coach speaks the response after each message</Text>
+              </View>
+            </View>
+            <Switch
+              value={ttsEnabled}
+              onValueChange={handleTtsToggle}
+              trackColor={{ false: COLORS.border, true: COLORS.primary + '80' }}
+              thumbColor={ttsEnabled ? COLORS.primary : '#f4f3f4'}
+            />
+          </View>
         </View>
 
         <TouchableOpacity style={styles.saveButton} onPress={saveProfile} disabled={saving}>
