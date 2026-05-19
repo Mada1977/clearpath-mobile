@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import * as SecureStore from 'expo-secure-store';
+import * as secureStorage from '../../src/services/secureStorage';
 import * as Speech from 'expo-speech';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
@@ -124,7 +124,7 @@ export default function ChatScreen() {
 
   async function loadHistory() {
     try {
-      const token = await SecureStore.getItemAsync('accessToken');
+      const token = await secureStorage.getItemAsync('accessToken');
       const res = await fetch(`${API_BASE_URL}/ai/messages`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -194,7 +194,7 @@ export default function ChatScreen() {
     setStreaming(true);
     setCrisis(null);
 
-    const token = await SecureStore.getItemAsync('accessToken');
+    const token = await secureStorage.getItemAsync('accessToken');
     let fullAiResponse = '';
 
     await new Promise<void>((resolve) => {

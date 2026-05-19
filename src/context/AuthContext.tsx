@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import * as SecureStore from 'expo-secure-store';
+import * as secureStorage from '../services/secureStorage';
 import api from '../services/api';
 
 export type User = {
@@ -48,14 +48,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function restoreSession() {
     try {
-      const token = await SecureStore.getItemAsync('accessToken');
+      const token = await secureStorage.getItemAsync('accessToken');
       if (token) {
         const { data } = await api.get('/users/me');
         setUser(extractUser(data));
       }
     } catch {
-      await SecureStore.deleteItemAsync('accessToken');
-      await SecureStore.deleteItemAsync('refreshToken');
+      await secureStorage.deleteItemAsync('accessToken');
+      await secureStorage.deleteItemAsync('refreshToken');
     } finally {
       setIsLoading(false);
     }
@@ -63,16 +63,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function login(email: string, password: string) {
     const { data } = await api.post('/auth/login', { email, password });
-    await SecureStore.setItemAsync('accessToken', data.accessToken);
-    await SecureStore.setItemAsync('refreshToken', data.refreshToken);
+    await secureStorage.setItemAsync('accessToken', data.accessToken);
+    await secureStorage.setItemAsync('refreshToken', data.refreshToken);
     const me = await api.get('/users/me');
     setUser(extractUser(me.data));
   }
 
   async function register(email: string, password: string, name: string, locale?: string) {
     const { data } = await api.post('/auth/register', { email, password, name });
-    await SecureStore.setItemAsync('accessToken', data.accessToken);
-    await SecureStore.setItemAsync('refreshToken', data.refreshToken);
+    await secureStorage.setItemAsync('accessToken', data.accessToken);
+    await secureStorage.setItemAsync('refreshToken', data.refreshToken);
     // Sync locale chosen before registration
     if (locale && locale !== 'en-US') {
       await api.patch('/users/me', { locale }).catch(() => {});
@@ -83,8 +83,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function logout() {
     await api.post('/auth/logout').catch(() => {});
-    await SecureStore.deleteItemAsync('accessToken');
-    await SecureStore.deleteItemAsync('refreshToken');
+    await secureStorage.deleteItemAsync('accessToken');
+    await secureStorage.deleteItemAsync('refreshToken');
     setUser(null);
   }
 
