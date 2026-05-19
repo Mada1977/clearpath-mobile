@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import api from '../services/api';
 
-type User = {
+export type User = {
   id: string;
   email: string;
   name: string | null;
@@ -11,20 +11,32 @@ type User = {
   stage: string;
   dailyGoal: number;
   isPremium: boolean;
+  premiumPlan: string | null;
+  premiumExpiresAt: string | null;
+  trialStartedAt: string | null;
   ageVerified: boolean;
   locale: string;
+  aiMessagesUsedToday: number;
+  trialDaysLeft: number | null;
+  isOnTrial: boolean;
+  notificationPrivacy: boolean;
 };
 
 type AuthContextType = {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  register: (email: string, password: string, name: string, locale?: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
+
+// Helper: the backend always wraps in { user: {...} } — unwrap it.
+function extractUser(data: any): User {
+  return data?.user ?? data;
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -39,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const token = await SecureStore.getItemAsync('accessToken');
       if (token) {
         const { data } = await api.get('/users/me');
-        setUser(data);
+        setUser(extractUser(data));
       }
     } catch {
       await SecureStore.deleteItemAsync('accessToken');
@@ -54,15 +66,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await SecureStore.setItemAsync('accessToken', data.accessToken);
     await SecureStore.setItemAsync('refreshToken', data.refreshToken);
     const me = await api.get('/users/me');
-    setUser(me.data);
+    setUser(extractUser(me.data));
   }
 
-  async function register(email: string, password: string, name: string) {
+  async function register(email: string, password: string, name: string, locale?: string) {
     const { data } = await api.post('/auth/register', { email, password, name });
     await SecureStore.setItemAsync('accessToken', data.accessToken);
     await SecureStore.setItemAsync('refreshToken', data.refreshToken);
+    // Sync locale chosen before registration
+    if (locale && locale !== 'en-US') {
+      await api.patch('/users/me', { locale }).catch(() => {});
+    }
     const me = await api.get('/users/me');
-    setUser(me.data);
+    setUser(extractUser(me.data));
   }
 
   async function logout() {
@@ -74,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function refreshUser() {
     const { data } = await api.get('/users/me');
-    setUser(data);
+    setUser(extractUser(data));
   }
 
   return (
