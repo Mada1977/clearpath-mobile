@@ -7,6 +7,9 @@ import api from '../../src/services/api';
 import { COLORS, ADDICTIONS } from '../../src/constants';
 import { useOffline } from '../../src/hooks/useOffline';
 import { cacheStats, getCachedStats, cacheCopingTips } from '../../src/services/offlineCache';
+import { useRouter } from 'expo-router';
+
+type TrackerSummary = { id: string; category: string; name: string | null; daysSober: number };
 
 type Stats = {
   streak: number;
@@ -15,20 +18,34 @@ type Stats = {
   totalSos: number;
 };
 
+const TRACKER_ICONS: Record<string, string> = {
+  smoking:'🚬', alcohol:'🍷', drugs:'💊', gambling:'🎰',
+  pornography:'🔒', gaming:'🎮', social_media:'📱', shopping:'🛍️',
+};
+
 export default function HomeScreen() {
   const { user } = useAuth();
   const { isOffline } = useOffline();
+  const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [trackers, setTrackers] = useState<TrackerSummary[]>([]);
 
   useEffect(() => {
     fetchStats();
+    fetchTrackers();
   }, []);
 
-  // Re-fetch when coming back online
   useEffect(() => {
-    if (!isOffline) fetchStats();
+    if (!isOffline) { fetchStats(); fetchTrackers(); }
   }, [isOffline]);
+
+  async function fetchTrackers() {
+    try {
+      const { data } = await api.get('/trackers');
+      setTrackers(data.trackers.slice(0, 4));
+    } catch {}
+  }
 
   async function fetchStats() {
     if (isOffline) {
@@ -103,6 +120,21 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* Tracker summary */}
+        {trackers.length > 0 && (
+          <TouchableOpacity style={styles.card} onPress={() => router.push('/(tabs)/trackers')} activeOpacity={0.8}>
+            <Text style={styles.cardTitle}>Active trackers</Text>
+            <View style={styles.trackerRow}>
+              {trackers.map(t => (
+                <View key={t.id} style={styles.trackerChip}>
+                  <Text style={styles.trackerIcon}>{TRACKER_ICONS[t.category] ?? '🔷'}</Text>
+                  <Text style={styles.trackerDays}>{t.daysSober}d</Text>
+                </View>
+              ))}
+            </View>
+          </TouchableOpacity>
+        )}
+
         {/* Profile summary */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>My recovery</Text>
@@ -126,9 +158,13 @@ function Row({ icon, label, value }: { icon: any; label: string; value: string }
 }
 
 const styles = StyleSheet.create({
-  safe:           { flex: 1, backgroundColor: COLORS.background },
-  offlineBanner:  { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.textMuted, paddingHorizontal: 16, paddingVertical: 6 },
+  safe:              { flex: 1, backgroundColor: COLORS.background },
+  offlineBanner:     { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: COLORS.textMuted, paddingHorizontal: 16, paddingVertical: 6 },
   offlineBannerText: { color: '#fff', fontSize: 12, fontWeight: '500' },
+  trackerRow:        { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 },
+  trackerChip:       { alignItems: 'center', backgroundColor: COLORS.background, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, minWidth: 54 },
+  trackerIcon:       { fontSize: 20, marginBottom: 2 },
+  trackerDays:       { fontSize: 13, fontWeight: '700', color: COLORS.primary },
   container:    { padding: 24 },
   greeting:     { fontSize: 24, fontWeight: '800', color: COLORS.text, marginBottom: 4 },
   sub:          { fontSize: 14, color: COLORS.textMuted, marginBottom: 28 },
