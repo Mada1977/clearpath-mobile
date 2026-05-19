@@ -27,7 +27,7 @@ export async function loadMusic(): Promise<boolean> {
     // File must exist at: assets/sounds/background.mp3
     const { sound } = await Audio.Sound.createAsync(
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      require('../../assets/sounds/background.mp3'),
+      require('../../assets/sounds/background.mp3.mp3'),
       { isLooping: true, volume: 0.35, shouldPlay: false }
     );
     soundObj = sound;
