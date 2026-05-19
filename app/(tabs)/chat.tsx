@@ -1,22 +1,26 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
   StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator,
-  Animated, Pressable,
+  Animated, Pressable, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import * as Speech from 'expo-speech';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {
-  ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
-} from 'expo-speech-recognition';
 import { useAuth } from '../../src/context/AuthContext';
 import { usePremium } from '../../src/context/PremiumContext';
 import { COLORS, API_BASE_URL } from '../../src/constants';
 import { UpgradePrompt } from '../../src/components/UpgradePrompt';
+
+// expo-speech-recognition requires a native build — not available in Expo Go.
+// We load it safely at runtime so the app never crashes in Expo Go.
+let SpeechModule: any = null;
+try {
+  SpeechModule = require('expo-speech-recognition').ExpoSpeechRecognitionModule;
+} catch {}
+const VOICE_AVAILABLE = !!SpeechModule;
 
 const FREE_DAILY_LIMIT = 10;
 const UPGRADE_PROMPT_THRESHOLD = 3;
@@ -41,6 +45,8 @@ export default function ChatScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const speakerAnim = useRef(new Animated.Value(1)).current;
   const pendingVoiceRef = useRef<string | null>(null);
+  // Ref so the speech 'end' closure always calls the latest sendMessageText
+  const sendVoiceRef = useRef<(text: string) => void>(() => {});
 
   useEffect(() => {
     loadHistory();
@@ -49,6 +55,37 @@ export default function ChatScreen() {
     });
     return () => { Speech.stop(); };
   }, []);
+
+  // Keep the voice-send ref up to date every render
+  sendVoiceRef.current = (text: string) => sendMessageText(text, true);
+
+  // Subscribe to speech events once on mount — uses refs so no stale closures
+  useEffect(() => {
+    if (!SpeechModule) return;
+    const subs: any[] = [
+      SpeechModule.addListener('result', (event: any) => {
+        const transcript = event.results?.[0]?.transcript;
+        if (transcript) {
+          setInput(transcript);
+          if (event.isFinal) pendingVoiceRef.current = transcript;
+        }
+      }),
+      SpeechModule.addListener('end', () => {
+        setIsRecording(false);
+        if (pendingVoiceRef.current) {
+          const text = pendingVoiceRef.current;
+          pendingVoiceRef.current = null;
+          sendVoiceRef.current(text);
+        }
+      }),
+      SpeechModule.addListener('error', (event: any) => {
+        setIsRecording(false);
+        pendingVoiceRef.current = null;
+        if (event.error !== 'aborted' && event.error !== 'no-speech') setInput('');
+      }),
+    ];
+    return () => subs.forEach(s => s?.remove?.());
+  }, []); // intentionally empty — uses refs
 
   // Pulse animation while recording
   useEffect(() => {
@@ -80,35 +117,6 @@ export default function ChatScreen() {
     }
   }, [speakingMsgId]);
 
-  // Speech recognition events
-  useSpeechRecognitionEvent('result', (event) => {
-    if (event.results?.[0]?.transcript) {
-      const transcript = event.results[0].transcript;
-      setInput(transcript);
-      if (event.isFinal) {
-        pendingVoiceRef.current = transcript;
-      }
-    }
-  });
-
-  useSpeechRecognitionEvent('end', () => {
-    setIsRecording(false);
-    // Auto-send if we got a final transcript from voice
-    if (pendingVoiceRef.current) {
-      const text = pendingVoiceRef.current;
-      pendingVoiceRef.current = null;
-      sendMessageText(text, true);
-    }
-  });
-
-  useSpeechRecognitionEvent('error', (event) => {
-    setIsRecording(false);
-    pendingVoiceRef.current = null;
-    if (event.error !== 'aborted' && event.error !== 'no-speech') {
-      setInput('');
-    }
-  });
-
   async function loadHistory() {
     try {
       const token = await SecureStore.getItemAsync('accessToken');
@@ -127,21 +135,30 @@ export default function ChatScreen() {
   }
 
   async function handleMicPress() {
+    // Native module not loaded — graceful degradation for Expo Go
+    if (!VOICE_AVAILABLE) {
+      Alert.alert(
+        'Voice input unavailable',
+        'Voice input is available in the full app build (App Store / Google Play), not in Expo Go.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
     if (!isPremium) {
       setShowUpgrade(true);
       return;
     }
     if (isRecording) {
-      ExpoSpeechRecognitionModule.stop();
+      SpeechModule.stop();
       return;
     }
-    const { granted } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    const { granted } = await SpeechModule.requestPermissionsAsync();
     if (!granted) return;
 
     pendingVoiceRef.current = null;
     setInput('');
     setIsRecording(true);
-    ExpoSpeechRecognitionModule.start({
+    SpeechModule.start({
       lang: user?.locale ?? 'en-US',
       interimResults: true,
       continuous: false,
@@ -203,9 +220,7 @@ export default function ChatScreen() {
               ));
               listRef.current?.scrollToEnd({ animated: false });
             }
-            if (event.type === 'crisis') {
-              setCrisis(event);
-            }
+            if (event.type === 'crisis') setCrisis(event);
             if (event.type === 'error') {
               setMessages(prev => prev.map(m =>
                 m.id === assistantId ? { ...m, content: event.message } : m
@@ -220,10 +235,7 @@ export default function ChatScreen() {
         setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
         resolve();
 
-        // Auto-speak the AI response if TTS enabled (especially useful after voice input)
-        if (ttsEnabled && fullAiResponse) {
-          speakMessage(fullAiResponse, assistantId);
-        }
+        if (ttsEnabled && fullAiResponse) speakMessage(fullAiResponse, assistantId);
 
         sessionMessageCount.current += 1;
         if (!isPremium && sessionMessageCount.current >= UPGRADE_PROMPT_THRESHOLD) {
@@ -248,8 +260,7 @@ export default function ChatScreen() {
   function speakMessage(text: string, msgId: string) {
     Speech.stop();
     setSpeakingMsgId(msgId);
-    const cleanText = text.replace(/\*\*/g, '');
-    Speech.speak(cleanText, {
+    Speech.speak(text.replace(/\*\*/g, ''), {
       language: user?.locale ?? 'en-US',
       onDone: () => setSpeakingMsgId(null),
       onStopped: () => setSpeakingMsgId(null),
@@ -258,12 +269,8 @@ export default function ChatScreen() {
   }
 
   function toggleSpeakMessage(text: string, msgId: string) {
-    if (speakingMsgId === msgId) {
-      Speech.stop();
-      setSpeakingMsgId(null);
-    } else {
-      speakMessage(text, msgId);
-    }
+    if (speakingMsgId === msgId) { Speech.stop(); setSpeakingMsgId(null); }
+    else speakMessage(text, msgId);
   }
 
   const remainingMessages = Math.max(0, FREE_DAILY_LIMIT - messagesUsedToday);
@@ -333,9 +340,7 @@ export default function ChatScreen() {
                   </View>
                 )}
                 {item.role === 'user' ? (
-                  <Text style={[styles.bubbleText, styles.userText]}>
-                    {item.content}
-                  </Text>
+                  <Text style={[styles.bubbleText, styles.userText]}>{item.content}</Text>
                 ) : (
                   <Text style={[styles.bubbleText, styles.aiText]}>
                     {renderBold(item.content || (streaming ? '...' : ''))}
@@ -358,11 +363,7 @@ export default function ChatScreen() {
             editable={!isRecording}
           />
 
-          {/* Mic button — premium only */}
-          <Pressable
-            onPress={handleMicPress}
-            style={styles.micBtnWrapper}
-          >
+          <Pressable onPress={handleMicPress}>
             <Animated.View style={[
               styles.micBtn,
               isRecording && styles.micBtnActive,
@@ -383,12 +384,6 @@ export default function ChatScreen() {
             }
           </TouchableOpacity>
         </View>
-
-        {!isPremium && (
-          <Text style={styles.voiceHint}>
-            <Ionicons name="mic-outline" size={11} color={COLORS.textMuted} /> Voice input is a premium feature
-          </Text>
-        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -397,9 +392,7 @@ export default function ChatScreen() {
 function renderBold(text: string) {
   const parts = text.split(/\*\*(.+?)\*\*/s);
   return parts.map((part, i) =>
-    i % 2 === 1
-      ? <Text key={i} style={styles.bold}>{part}</Text>
-      : part
+    i % 2 === 1 ? <Text key={i} style={styles.bold}>{part}</Text> : part
   );
 }
 
@@ -429,9 +422,7 @@ const styles = StyleSheet.create({
   aiText:          { color: COLORS.text },
   inputRow:        { flexDirection: 'row', alignItems: 'flex-end', padding: 12, borderTopWidth: 1, borderTopColor: COLORS.border, backgroundColor: COLORS.card, gap: 8 },
   input:           { flex: 1, backgroundColor: COLORS.background, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 10, fontSize: 15, color: COLORS.text, maxHeight: 100, borderWidth: 1, borderColor: COLORS.border },
-  micBtnWrapper:   {},
   micBtn:          { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border },
   micBtnActive:    { backgroundColor: COLORS.danger, borderColor: COLORS.danger },
   sendBtn:         { backgroundColor: COLORS.primary, borderRadius: 22, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  voiceHint:       { textAlign: 'center', fontSize: 11, color: COLORS.textMuted, paddingBottom: 6, backgroundColor: COLORS.card },
 });
