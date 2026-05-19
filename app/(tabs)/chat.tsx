@@ -314,12 +314,17 @@ export default function ChatScreen() {
         triggerMessage={lastMessage}
       />
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
         <FlatList
           ref={listRef}
           data={messages}
           keyExtractor={m => m.id}
+          style={{ flex: 1 }}
           contentContainerStyle={styles.messageList}
+          keyboardShouldPersistTaps="handled"
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
           renderItem={({ item }) => (
             <View style={[styles.bubbleRow, item.role === 'user' ? styles.bubbleRowRight : styles.bubbleRowLeft]}>
