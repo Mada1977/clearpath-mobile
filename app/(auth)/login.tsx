@@ -39,7 +39,7 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.inner}>
-        <Text style={styles.logo}>ClearPath</Text>
+        <Text style={styles.logo}>Bravely Path</Text>
         <Text style={styles.tagline}>Your recovery companion</Text>
 
         <TextInput

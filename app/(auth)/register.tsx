@@ -38,7 +38,7 @@ export default function RegisterScreen() {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
-        <Text style={styles.logo}>ClearPath</Text>
+        <Text style={styles.logo}>Bravely Path</Text>
         <Text style={styles.tagline}>Start your recovery journey</Text>
 
         <TextInput

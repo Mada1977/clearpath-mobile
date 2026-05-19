@@ -10,6 +10,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.textMuted,
         tabBarStyle: { borderTopColor: COLORS.border, backgroundColor: COLORS.card },
+        tabBarLabelStyle: { fontSize: 11 },
       }}
     >
       <Tabs.Screen
@@ -24,6 +25,21 @@ export default function TabLayout() {
         options={{
           title: 'AI Coach',
           tabBarIcon: ({ color, size }) => <Ionicons name="chatbubble-ellipses-outline" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="sos"
+        options={{
+          title: 'SOS',
+          tabBarIcon: ({ color, size }) => <Ionicons name="flash-outline" size={size} color={color} />,
+          tabBarActiveTintColor: COLORS.danger,
+        }}
+      />
+      <Tabs.Screen
+        name="progress"
+        options={{
+          title: 'Progress',
+          tabBarIcon: ({ color, size }) => <Ionicons name="bar-chart-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
