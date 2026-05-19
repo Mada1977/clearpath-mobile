@@ -15,16 +15,26 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
-// On 401, try to refresh then retry once
+// On 401, try to refresh then retry once.
+// Never attempt refresh for auth endpoints — login/register/refresh failures
+// must propagate directly to the caller, not silently loop.
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config;
-    if (error.response?.status === 401 && !original._retry) {
+    const isAuthRoute = original?.url?.includes('/auth/');
+
+    if (error.response?.status === 401 && !original._retry && !isAuthRoute) {
       original._retry = true;
       try {
         const refreshToken = await SecureStore.getItemAsync('refreshToken');
-        const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
+        if (!refreshToken) throw new Error('no refresh token stored');
+        // Use a short timeout so a sleeping server doesn't hang the refresh attempt
+        const { data } = await axios.post(
+          `${API_BASE_URL}/auth/refresh`,
+          { refreshToken },
+          { timeout: 10000 }
+        );
         await SecureStore.setItemAsync('accessToken', data.accessToken);
         original.headers.Authorization = `Bearer ${data.accessToken}`;
         return api(original);
@@ -33,6 +43,7 @@ api.interceptors.response.use(
         await SecureStore.deleteItemAsync('refreshToken');
       }
     }
+
     return Promise.reject(error);
   }
 );
