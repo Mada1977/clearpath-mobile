@@ -1,14 +1,20 @@
 import { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, ActivityIndicator,
+  TouchableOpacity, Modal, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../src/context/AuthContext';
 import api from '../../src/services/api';
 import { COLORS } from '../../src/constants';
 import { useOffline } from '../../src/hooks/useOffline';
 import { getCachedStats } from '../../src/services/offlineCache';
+import { generateAndShareReport } from '../../src/services/reportGenerator';
+import type { Log } from '../../src/services/reportGenerator';
+
+const FREE_PREVIEW_KEY = 'bp_report_free_preview_used';
 
 type Stats = {
   streak: number;
@@ -35,10 +41,15 @@ const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 export default function ProgressScreen() {
   const { user } = useAuth();
   const { isOffline } = useOffline();
-  const [stats, setStats]     = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [stats, setStats]           = useState<Stats | null>(null);
+  const [loading, setLoading]       = useState(true);
+  const [logs, setLogs]             = useState<Log[]>([]);
+  const [stability, setStability]   = useState<number | null>(null);
+  const [reportModal, setReportModal] = useState(false);
+  const [selectedLogIds, setSelectedLogIds] = useState<string[]>([]);
+  const [generating, setGenerating] = useState(false);
 
-  useEffect(() => { fetchStats(); }, []);
+  useEffect(() => { fetchStats(); fetchLogs(); fetchStability(); }, []);
 
   useEffect(() => {
     if (!isOffline) fetchStats();
@@ -62,16 +73,97 @@ export default function ProgressScreen() {
     }
   }
 
+  async function fetchLogs() {
+    try {
+      const { data } = await api.get('/logs?limit=30');
+      setLogs(data.logs ?? data ?? []);
+    } catch {}
+  }
+
+  async function fetchStability() {
+    try {
+      const { data } = await api.get('/users/me/stability-score');
+      setStability(data.score ?? null);
+    } catch {}
+  }
+
+  async function openReportModal() {
+    const isPremium = (user as any)?.isPremium;
+    if (!isPremium) {
+      const used = await AsyncStorage.getItem(FREE_PREVIEW_KEY);
+      if (used) {
+        Alert.alert(
+          'Premium feature',
+          'Therapist reports are a premium feature. Upgrade to generate unlimited reports.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+    }
+    // Pre-select logs that have notes
+    const withNotes = logs.filter(l => l.notes).slice(0, 10).map(l => l.id);
+    setSelectedLogIds(withNotes);
+    setReportModal(true);
+  }
+
+  async function handleGenerateReport() {
+    setGenerating(true);
+    try {
+      const now = new Date();
+      const weekAgo = new Date(now);
+      weekAgo.setDate(weekAgo.getDate() - 6);
+      const weekLogs = logs.filter(l => new Date(l.loggedAt) >= weekAgo);
+
+      await generateAndShareReport({
+        userName: user?.name ?? null,
+        streak: stats?.streak ?? 0,
+        totalResisted: weekLogs.filter(l => l.outcome === 'resisted').length,
+        totalSlips: weekLogs.filter(l => l.outcome === 'gave_in').length,
+        stabilityScore: stability,
+        logs,
+        selectedLogIds,
+        weekStart: weekAgo.toLocaleDateString('en', { month: 'short', day: 'numeric' }),
+        weekEnd: now.toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' }),
+      });
+
+      // Mark free preview used if not premium
+      if (!(user as any)?.isPremium) {
+        await AsyncStorage.setItem(FREE_PREVIEW_KEY, '1');
+      }
+      setReportModal(false);
+    } catch (err: any) {
+      Alert.alert('Error', 'Could not generate report. Please try again.');
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  function toggleLogSelection(id: string) {
+    setSelectedLogIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  }
+
   const streak        = stats?.streak ?? 0;
   const weeklyData    = stats?.weeklyResisted ?? [0, 0, 0, 0, 0, 0, 0];
   const maxBar        = Math.max(...weeklyData, 1);
   const nextMilestone = MILESTONES.find(m => m.days > streak);
   const daysToNext    = nextMilestone ? nextMilestone.days - streak : 0;
 
+  const logsWithNotes = logs.filter(l => l.notes);
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Progress</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>Progress</Text>
+          <TouchableOpacity style={styles.reportBtn} onPress={openReportModal}>
+            <Ionicons name="document-text-outline" size={15} color={COLORS.primary} />
+            <Text style={styles.reportBtnText}>
+              {(user as any)?.isPremium ? 'Therapist report' : 'Report (1 free)'}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         {loading ? (
           <ActivityIndicator color={COLORS.primary} style={{ marginTop: 40 }} />
@@ -142,6 +234,63 @@ export default function ProgressScreen() {
           </>
         )}
       </ScrollView>
+      {/* Therapist Report Modal */}
+      <Modal visible={reportModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modal}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Therapist Report</Text>
+              <TouchableOpacity onPress={() => setReportModal(false)}>
+                <Ionicons name="close" size={22} color={COLORS.textMuted} />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.modalDesc}>
+              Select journal entries to include. Your streak, mood chart, and stability score are always included.
+            </Text>
+
+            {logsWithNotes.length > 0 ? (
+              <ScrollView style={styles.logPicker} showsVerticalScrollIndicator={false}>
+                {logsWithNotes.map(l => (
+                  <TouchableOpacity
+                    key={l.id}
+                    style={styles.logPickerRow}
+                    onPress={() => toggleLogSelection(l.id)}
+                  >
+                    <View style={[styles.logCheckbox, selectedLogIds.includes(l.id) && styles.logCheckboxOn]}>
+                      {selectedLogIds.includes(l.id) && <Ionicons name="checkmark" size={13} color="#fff" />}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.logPickerDate}>
+                        {new Date(l.loggedAt).toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' })} · {l.addiction}
+                      </Text>
+                      <Text style={styles.logPickerNote} numberOfLines={2}>{l.notes}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            ) : (
+              <Text style={styles.noNotes}>No journal entries with notes found. The report will still include your stats and mood chart.</Text>
+            )}
+
+            <TouchableOpacity
+              style={[styles.generateBtn, generating && styles.generateBtnDisabled]}
+              onPress={handleGenerateReport}
+              disabled={generating}
+            >
+              {generating
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <>
+                    <Ionicons name="share-outline" size={16} color="#fff" />
+                    <Text style={styles.generateBtnText}>Generate & Share PDF</Text>
+                  </>
+              }
+            </TouchableOpacity>
+            {!(user as any)?.isPremium && (
+              <Text style={styles.freeNote}>1 free report · Unlimited with Premium</Text>
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -158,7 +307,10 @@ function StatBox({ value, label, color }: { value: number; label: string; color:
 const styles = StyleSheet.create({
   safe:               { flex: 1, backgroundColor: COLORS.background },
   container:          { padding: 24, paddingBottom: 48 },
-  title:              { fontSize: 24, fontWeight: '800', color: COLORS.text, marginBottom: 20 },
+  titleRow:           { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  title:              { fontSize: 24, fontWeight: '800', color: COLORS.text },
+  reportBtn:          { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1.5, borderColor: COLORS.primary, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
+  reportBtnText:      { color: COLORS.primary, fontWeight: '700', fontSize: 12 },
   streakCard:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.primary, borderRadius: 20, padding: 24, marginBottom: 16 },
   streakLeft:         { flex: 1 },
   streakNum:          { fontSize: 52, fontWeight: '900', color: '#fff', lineHeight: 58 },
@@ -185,4 +337,22 @@ const styles = StyleSheet.create({
   milestoneNameDone:  { color: COLORS.text },
   milestoneDays:      { fontSize: 12, color: COLORS.textMuted, marginTop: 1 },
   milestoneLocked:    { fontSize: 12, color: COLORS.textMuted, fontWeight: '600' },
+
+  // Report modal
+  modalOverlay:       { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+  modal:              { backgroundColor: COLORS.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 36, maxHeight: '80%' },
+  modalHeader:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  modalTitle:         { fontSize: 18, fontWeight: '800', color: COLORS.text },
+  modalDesc:          { fontSize: 13, color: COLORS.textMuted, marginBottom: 16, lineHeight: 18 },
+  logPicker:          { maxHeight: 220, marginBottom: 16 },
+  logPickerRow:       { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: COLORS.background },
+  logCheckbox:        { width: 20, height: 20, borderRadius: 5, borderWidth: 2, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
+  logCheckboxOn:      { borderColor: COLORS.primary, backgroundColor: COLORS.primary },
+  logPickerDate:      { fontSize: 11, color: COLORS.textMuted, marginBottom: 2 },
+  logPickerNote:      { fontSize: 13, color: COLORS.text, lineHeight: 18 },
+  noNotes:            { fontSize: 13, color: COLORS.textMuted, marginBottom: 16, fontStyle: 'italic' },
+  generateBtn:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: COLORS.primary, borderRadius: 12, paddingVertical: 14 },
+  generateBtnDisabled:{ opacity: 0.6 },
+  generateBtnText:    { color: '#fff', fontWeight: '700', fontSize: 15 },
+  freeNote:           { textAlign: 'center', fontSize: 12, color: COLORS.textMuted, marginTop: 10 },
 });
