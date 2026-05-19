@@ -1,15 +1,25 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Alert, ActivityIndicator,
+  Alert, ActivityIndicator, TextInput, Modal, Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import api from '../../src/services/api';
 import { COLORS, ADDICTIONS, STAGES } from '../../src/constants';
 import { useLanguage } from '../../src/hooks/useLanguage';
 import { LanguagePickerModal } from '../../src/components/LanguagePickerModal';
+
+type SupporterLink = {
+  id: string;
+  supporterEmail: string;
+  inviteCode: string;
+  status: 'pending' | 'active' | 'revoked';
+  shareStreak: boolean;
+  shareMood: boolean;
+};
 
 export default function ProfileScreen() {
   const { user, logout, refreshUser } = useAuth();
@@ -19,6 +29,73 @@ export default function ProfileScreen() {
   const [langModalVisible, setLangModalVisible] = useState(false);
   const [selectedAddictions, setSelectedAddictions] = useState<string[]>(user?.addictions ?? []);
   const [stage, setStage] = useState(user?.stage ?? 'curious');
+
+  // Supporters state
+  const [supporters, setSupporters] = useState<SupporterLink[]>([]);
+  const [inviteModalVisible, setInviteModalVisible] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [shareStreak, setShareStreak] = useState(true);
+  const [shareMood, setShareMood] = useState(false);
+  const [inviting, setInviting] = useState(false);
+
+  useFocusEffect(useCallback(() => {
+    loadSupporters();
+  }, []));
+
+  async function loadSupporters() {
+    try {
+      const res = await api.get('/supporters/mine');
+      setSupporters(res.data.supporters);
+    } catch {}
+  }
+
+  async function sendInvite() {
+    if (!inviteEmail.trim()) return;
+    setInviting(true);
+    try {
+      const res = await api.post('/supporters/invite', {
+        supporterEmail: inviteEmail.trim(),
+        shareStreak,
+        shareMood,
+      });
+      const code = res.data.inviteCode;
+      setInviteModalVisible(false);
+      setInviteEmail('');
+      await loadSupporters();
+      Share.share({
+        message: `I'd like to share my recovery progress with you on Bravely Path. Use this invite code to follow my journey: ${code}`,
+        title: 'Bravely Path — Supporter Invite',
+      });
+    } catch (err: any) {
+      Alert.alert('Error', err.response?.data?.error || 'Could not create invite.');
+    } finally {
+      setInviting(false);
+    }
+  }
+
+  async function revokeSupporter(id: string, email: string) {
+    Alert.alert('Revoke access', `Remove ${email} as your supporter?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Revoke', style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.delete(`/supporters/${id}`);
+            await loadSupporters();
+          } catch (err: any) {
+            Alert.alert('Error', err.response?.data?.error || 'Could not revoke.');
+          }
+        },
+      },
+    ]);
+  }
+
+  async function shareInviteCode(code: string) {
+    Share.share({
+      message: `Use this code to follow my Bravely Path recovery journey: ${code}`,
+      title: 'Bravely Path — Supporter Invite',
+    });
+  }
 
   function toggleAddiction(value: string) {
     setSelectedAddictions(prev =>
@@ -133,12 +210,103 @@ export default function ProfileScreen() {
           {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>Save changes</Text>}
         </TouchableOpacity>
 
+        {/* Family & Supporters */}
+        <Text style={styles.sectionLabel}>Family & Supporters</Text>
+        <View style={styles.card}>
+          <Text style={styles.supportersDesc}>
+            Invite a trusted family member or friend to see your progress. They'll see only what you choose to share.
+          </Text>
+          <TouchableOpacity style={styles.inviteBtn} onPress={() => setInviteModalVisible(true)}>
+            <Ionicons name="person-add-outline" size={16} color={COLORS.primary} />
+            <Text style={styles.inviteBtnText}>Invite a supporter</Text>
+          </TouchableOpacity>
+
+          {supporters.length > 0 && (
+            <View style={styles.supporterList}>
+              {supporters.map(s => (
+                <View key={s.id} style={styles.supporterRow}>
+                  <View style={styles.supporterInfo}>
+                    <View style={[styles.statusDot, { backgroundColor: s.status === 'active' ? COLORS.secondary : COLORS.warning }]} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.supporterEmail}>{s.supporterEmail}</Text>
+                      <Text style={styles.supporterStatus}>
+                        {s.status === 'active' ? 'Active' : 'Pending'} ·{' '}
+                        {s.shareStreak ? 'Streak' : ''}{s.shareStreak && s.shareMood ? ' + ' : ''}{s.shareMood ? 'Mood' : ''}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.supporterActions}>
+                    {s.status === 'pending' && (
+                      <TouchableOpacity onPress={() => shareInviteCode(s.inviteCode)} style={styles.iconBtn}>
+                        <Ionicons name="share-outline" size={18} color={COLORS.primary} />
+                      </TouchableOpacity>
+                    )}
+                    <TouchableOpacity onPress={() => revokeSupporter(s.id, s.supporterEmail)} style={styles.iconBtn}>
+                      <Ionicons name="close-circle-outline" size={18} color={COLORS.danger} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
         {/* Sign out */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={18} color={COLORS.danger} />
           <Text style={styles.logoutText}>Sign out</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Invite modal */}
+      <Modal visible={inviteModalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modal}>
+            <Text style={styles.modalTitle}>Invite a supporter</Text>
+            <Text style={styles.modalDesc}>
+              They'll receive a code to view your progress in Bravely Path.
+            </Text>
+
+            <Text style={styles.inputLabel}>Supporter's email</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="their@email.com"
+              placeholderTextColor={COLORS.textMuted}
+              value={inviteEmail}
+              onChangeText={setInviteEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+
+            <Text style={styles.inputLabel}>What can they see?</Text>
+            <TouchableOpacity style={styles.toggleRow} onPress={() => setShareStreak(v => !v)}>
+              <View style={[styles.toggle, shareStreak && styles.toggleOn]}>
+                {shareStreak && <Ionicons name="checkmark" size={14} color="#fff" />}
+              </View>
+              <Text style={styles.toggleLabel}>Sobriety streak (days sober)</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.toggleRow} onPress={() => setShareMood(v => !v)}>
+              <View style={[styles.toggle, shareMood && styles.toggleOn]}>
+                {shareMood && <Ionicons name="checkmark" size={14} color="#fff" />}
+              </View>
+              <Text style={styles.toggleLabel}>Last reported mood</Text>
+            </TouchableOpacity>
+
+            <View style={styles.modalBtns}>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setInviteModalVisible(false)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalConfirmBtn, (!inviteEmail.trim() || inviting) && styles.modalBtnDisabled]}
+                onPress={sendInvite}
+                disabled={!inviteEmail.trim() || inviting}
+              >
+                {inviting ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.modalConfirmText}>Send invite</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <LanguagePickerModal
         visible={langModalVisible}
@@ -176,4 +344,35 @@ const styles = StyleSheet.create({
   saveButtonText:  { color: '#fff', fontSize: 16, fontWeight: '700' },
   logoutButton:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 20, paddingVertical: 14 },
   logoutText:      { color: COLORS.danger, fontSize: 15, fontWeight: '600' },
+
+  // Supporters
+  supportersDesc:      { fontSize: 13, color: COLORS.textMuted, lineHeight: 18, marginBottom: 14 },
+  inviteBtn:           { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderColor: COLORS.primary, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14 },
+  inviteBtnText:       { color: COLORS.primary, fontWeight: '700', fontSize: 14 },
+  supporterList:       { marginTop: 14, borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 12, gap: 12 },
+  supporterRow:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  supporterInfo:       { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  statusDot:           { width: 8, height: 8, borderRadius: 4 },
+  supporterEmail:      { fontSize: 14, fontWeight: '600', color: COLORS.text },
+  supporterStatus:     { fontSize: 12, color: COLORS.textMuted, marginTop: 1 },
+  supporterActions:    { flexDirection: 'row', gap: 4 },
+  iconBtn:             { padding: 6 },
+
+  // Invite modal
+  modalOverlay:       { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+  modal:              { backgroundColor: COLORS.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 28, paddingBottom: 40 },
+  modalTitle:         { fontSize: 20, fontWeight: '800', color: COLORS.text, marginBottom: 6 },
+  modalDesc:          { fontSize: 13, color: COLORS.textMuted, marginBottom: 20, lineHeight: 18 },
+  inputLabel:         { fontSize: 13, fontWeight: '600', color: COLORS.text, marginBottom: 6 },
+  textInput:          { borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 11, fontSize: 14, color: COLORS.text, marginBottom: 16 },
+  toggleRow:          { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
+  toggle:             { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
+  toggleOn:           { borderColor: COLORS.primary, backgroundColor: COLORS.primary },
+  toggleLabel:        { fontSize: 14, color: COLORS.text },
+  modalBtns:          { flexDirection: 'row', gap: 12, marginTop: 8 },
+  modalCancelBtn:     { flex: 1, borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
+  modalCancelText:    { color: COLORS.textMuted, fontWeight: '600', fontSize: 15 },
+  modalConfirmBtn:    { flex: 1, backgroundColor: COLORS.primary, borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
+  modalConfirmText:   { color: '#fff', fontWeight: '700', fontSize: 15 },
+  modalBtnDisabled:   { opacity: 0.5 },
 });
