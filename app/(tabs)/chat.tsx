@@ -9,17 +9,23 @@ import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import * as Speech from 'expo-speech';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 import { useAuth } from '../../src/context/AuthContext';
 import { usePremium } from '../../src/context/PremiumContext';
 import { COLORS, API_BASE_URL } from '../../src/constants';
 import { UpgradePrompt } from '../../src/components/UpgradePrompt';
 
-// expo-speech-recognition requires a native build — not available in Expo Go.
-// We load it safely at runtime so the app never crashes in Expo Go.
+// expo-speech-recognition requires a custom native build.
+// In Expo Go (appOwnership === 'expo') the native module is not registered,
+// so we must skip the require() entirely — a try/catch alone is not reliable
+// because React Native's module system can throw before JS gets control.
+const IS_EXPO_GO = Constants.appOwnership === 'expo';
 let SpeechModule: any = null;
-try {
-  SpeechModule = require('expo-speech-recognition').ExpoSpeechRecognitionModule;
-} catch {}
+if (!IS_EXPO_GO) {
+  try {
+    SpeechModule = require('expo-speech-recognition').ExpoSpeechRecognitionModule;
+  } catch {}
+}
 const VOICE_AVAILABLE = !!SpeechModule;
 
 const FREE_DAILY_LIMIT = 10;
