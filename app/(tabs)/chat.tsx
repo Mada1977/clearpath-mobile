@@ -16,12 +16,11 @@ import { COLORS, API_BASE_URL } from '../../src/constants';
 import { UpgradePrompt } from '../../src/components/UpgradePrompt';
 
 // expo-speech-recognition requires a custom native build.
-// In Expo Go (appOwnership === 'expo') the native module is not registered,
-// so we must skip the require() entirely — a try/catch alone is not reliable
-// because React Native's module system can throw before JS gets control.
+// Skip require() in Expo Go and on web — native module is not registered in either.
 const IS_EXPO_GO = Constants.appOwnership === 'expo';
+const IS_WEB = Platform.OS === 'web';
 let SpeechModule: any = null;
-if (!IS_EXPO_GO) {
+if (!IS_EXPO_GO && !IS_WEB) {
   try {
     SpeechModule = require('expo-speech-recognition').ExpoSpeechRecognitionModule;
   } catch {}
