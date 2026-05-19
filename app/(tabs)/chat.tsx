@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
+import Markdown from 'react-native-markdown-display';
 import { useAuth } from '../../src/context/AuthContext';
 import { COLORS, API_BASE_URL } from '../../src/constants';
 
@@ -140,9 +141,15 @@ export default function ChatScreen() {
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
           renderItem={({ item }) => (
             <View style={[styles.bubble, item.role === 'user' ? styles.userBubble : styles.aiBubble]}>
-              <Text style={[styles.bubbleText, item.role === 'user' ? styles.userText : styles.aiText]}>
-                {item.content || (streaming && item.role === 'assistant' ? '...' : '')}
-              </Text>
+              {item.role === 'user' ? (
+                <Text style={[styles.bubbleText, styles.userText]}>
+                  {item.content}
+                </Text>
+              ) : (
+                <Markdown style={markdownStyles}>
+                  {item.content || (streaming ? '...' : '')}
+                </Markdown>
+              )}
             </View>
           )}
         />
@@ -168,6 +175,18 @@ export default function ChatScreen() {
     </SafeAreaView>
   );
 }
+
+const markdownStyles = {
+  body:        { fontSize: 15, lineHeight: 22, color: COLORS.text },
+  strong:      { fontWeight: '700' as const },
+  em:          { fontStyle: 'italic' as const },
+  bullet_list: { marginVertical: 2 },
+  ordered_list:{ marginVertical: 2 },
+  list_item:   { marginVertical: 1 },
+  paragraph:   { marginVertical: 2 },
+  code_inline: { backgroundColor: COLORS.border, borderRadius: 4, paddingHorizontal: 4, fontSize: 13 },
+  fence:       { backgroundColor: COLORS.border, borderRadius: 6, padding: 8, fontSize: 13 },
+};
 
 const styles = StyleSheet.create({
   safe:        { flex: 1, backgroundColor: COLORS.background },
