@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  ActivityIndicator, Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -28,6 +28,7 @@ export default function OnboardingScreen() {
   const [addictions, setAddictions] = useState<string[]>([]);
   const [stage, setStage]           = useState('');
   const [saving, setSaving]         = useState(false);
+  const [error, setError]           = useState('');
 
   function toggleAddiction(val: string) {
     setAddictions(prev => prev.includes(val) ? prev.filter(a => a !== val) : [...prev, val]);
@@ -42,13 +43,15 @@ export default function OnboardingScreen() {
 
   async function finish() {
     setSaving(true);
+    setError('');
     try {
       await api.patch('/users/me', { role, addictions, stage });
-      await refreshUser();
+      // Set the flag before refreshUser so the layout effect sees it already set
       await AsyncStorage.setItem('bravelypath_onboarded', 'true');
+      await refreshUser();
       router.replace('/(tabs)');
-    } catch {
-      Alert.alert('Error', 'Could not save your profile. Please try again.');
+    } catch (e: any) {
+      setError(e?.response?.data?.error || 'Could not save your profile. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -138,6 +141,13 @@ export default function OnboardingScreen() {
         )}
       </ScrollView>
 
+      {/* Inline error — shown instead of Alert.alert for web compatibility */}
+      {!!error && (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      )}
+
       {/* Footer buttons */}
       <View style={styles.footer}>
         {step > 0 && (
@@ -185,6 +195,8 @@ const styles = StyleSheet.create({
   stageCardActive: { borderColor: COLORS.primary, backgroundColor: COLORS.primary + '10' },
   stageLabel:      { fontSize: 15, fontWeight: '600', color: COLORS.text },
   stageLabelActive:{ color: COLORS.primary },
+  errorBanner:     { marginHorizontal: 20, marginBottom: 8, padding: 12, borderRadius: 10, backgroundColor: '#FEE2E2' },
+  errorText:       { color: '#B91C1C', fontSize: 13, textAlign: 'center' },
   footer:          { flexDirection: 'row', padding: 20, gap: 12 },
   backBtn:         { width: 50, height: 52, borderRadius: 12, borderWidth: 1.5, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.card },
   nextBtn:         { flex: 1, height: 52, borderRadius: 12, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
