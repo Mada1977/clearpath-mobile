@@ -5,74 +5,122 @@ import { COLORS } from '../constants';
 
 type Props = { score: number; label: string };
 
+// Gauge geometry — center sits near the bottom so the rainbow arc has
+// full headroom above it inside the 200×120 viewBox.
 const W  = 200;
 const H  = 120;
 const CX = 100;
-const CY = 105; // center near bottom so the upper arc has full headroom
-const R  = 82;
-const SW = 14;
+const CY = 110;
+const R  = 90;
+const SW = 16;
 
-function polarToXY(angleDeg: number) {
-  const rad = angleDeg * (Math.PI / 180);
+// Map a math-convention angle (0°=right, 90°=up) to SVG pixel coords.
+function pt(deg: number) {
+  const rad = (deg * Math.PI) / 180;
   return {
-    x: +(CX + R * Math.cos(rad)).toFixed(3),
-    y: +(CY - R * Math.sin(rad)).toFixed(3),
+    x: +(CX + R * Math.cos(rad)).toFixed(2),
+    y: +(CY - R * Math.sin(rad)).toFixed(2),
   };
 }
 
-// Counterclockwise arc in SVG screen space (sweep=0) from left to right = upper semicircle
+// Build an SVG arc path from startDeg→endDeg (both in math convention,
+// decreasing from 180→0 sweeps left-to-right along the upper arc).
+// We always split at 90° (the topmost point) so no single arc command
+// ever spans the full 180° diameter — that degenerate case causes some
+// renderers to draw the wrong semicircle.
 function buildArc(startDeg: number, endDeg: number): string {
   if (Math.abs(startDeg - endDeg) < 0.5) return '';
-  const s = polarToXY(startDeg);
-  const e = polarToXY(endDeg);
-  // Going counterclockwise from 180° toward 0° stays in the upper half
+
+  const s = pt(startDeg);
+  const e = pt(endDeg);
+
+  if (startDeg > 90 && endDeg < 90) {
+    // Arc crosses the apex — split into two ≤90° segments.
+    const apex = pt(90);
+    return (
+      `M ${s.x} ${s.y} A ${R} ${R} 0 0 0 ${apex.x} ${apex.y} ` +
+      `A ${R} ${R} 0 0 0 ${e.x} ${e.y}`
+    );
+  }
+
+  // Single arc, at most 90° — no degenerate case.
   return `M ${s.x} ${s.y} A ${R} ${R} 0 0 0 ${e.x} ${e.y}`;
 }
 
-const TRACK_D = buildArc(180, 0); // full semicircle track
+// Full track: left (180°) → apex (90°) → right (0°).
+const TRACK_D = buildArc(180, 0);
 
 function scoreColor(score: number) {
-  if (score >= 70) return COLORS.secondary;  // green
-  if (score >= 40) return '#F59E0B';          // amber
-  return COLORS.danger;                        // red
+  if (score >= 70) return COLORS.secondary; // green
+  if (score >= 40) return '#F59E0B';        // amber
+  return COLORS.danger;                      // red
 }
 
 export function StabilityScore({ score, label }: Props) {
   const [infoVisible, setInfoVisible] = useState(false);
 
-  // Fill: 180° → (180 - score/100*180)°
+  // Fill sweeps from the left endpoint toward the right, proportional to score.
   const fillEndDeg = 180 - (Math.min(score, 100) / 100) * 180;
-  const fillD = score > 0 ? buildArc(180, fillEndDeg) : '';
-  const color = scoreColor(score);
+  const fillD      = score > 0 ? buildArc(180, fillEndDeg) : '';
+  const color      = scoreColor(score);
 
   return (
     <>
       <TouchableOpacity style={styles.container} onPress={() => setInfoVisible(true)} activeOpacity={0.85}>
         <Text style={styles.heading}>Daily stability score</Text>
-        <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
-          {/* Track */}
-          <Path d={TRACK_D} fill="none" stroke={COLORS.border} strokeWidth={SW} strokeLinecap="round" />
-          {/* Fill */}
-          {fillD !== '' && (
-            <Path d={fillD} fill="none" stroke={color} strokeWidth={SW} strokeLinecap="round" />
-          )}
-          {/* Score number */}
-          <SvgText
-            x={CX}
-            y={CY + 4}
-            textAnchor="middle"
-            fontSize="28"
-            fontWeight="900"
-            fill={color}
+
+        {/* overflow:visible on the wrapper lets the arc escape any parent clip */}
+        <View style={styles.svgWrap}>
+          <Svg
+            width={W}
+            height={H}
+            viewBox={`0 0 ${W} ${H}`}
+            overflow="visible"
           >
-            {score}
-          </SvgText>
-        </Svg>
+            {/* Grey track — full semicircle */}
+            <Path
+              d={TRACK_D}
+              fill="none"
+              stroke={COLORS.border}
+              strokeWidth={SW}
+              strokeLinecap="round"
+            />
+
+            {/* Coloured fill — proportional to score */}
+            {fillD !== '' && (
+              <Path
+                d={fillD}
+                fill="none"
+                stroke={color}
+                strokeWidth={SW}
+                strokeLinecap="round"
+              />
+            )}
+
+            {/* Score number — centred inside the arc */}
+            <SvgText
+              x={CX}
+              y={CY - 18}
+              textAnchor="middle"
+              fontSize="34"
+              fontWeight="900"
+              fill={color}
+            >
+              {score}
+            </SvgText>
+          </Svg>
+        </View>
+
         <Text style={[styles.label, { color }]}>{label}</Text>
         <Text style={styles.tapHint}>Tap to learn more</Text>
       </TouchableOpacity>
 
-      <Modal visible={infoVisible} transparent animationType="fade" onRequestClose={() => setInfoVisible(false)}>
+      <Modal
+        visible={infoVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setInfoVisible(false)}
+      >
         <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setInfoVisible(false)}>
           <TouchableOpacity activeOpacity={1} onPress={() => {}}>
             <View style={styles.sheet}>
@@ -102,8 +150,9 @@ function InfoRow({ emoji, text }: { emoji: string; text: string }) {
 
 const styles = StyleSheet.create({
   container:  { backgroundColor: COLORS.card, borderRadius: 16, padding: 16, alignItems: 'center', marginBottom: 16, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
+  svgWrap:    { overflow: 'visible' },
   heading:    { fontSize: 13, fontWeight: '600', color: COLORS.textMuted, marginBottom: 4 },
-  label:      { fontSize: 15, fontWeight: '700', marginTop: -4 },
+  label:      { fontSize: 15, fontWeight: '700', marginTop: 2 },
   tapHint:    { fontSize: 11, color: COLORS.textMuted, marginTop: 6 },
   overlay:    { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
   sheet:      { backgroundColor: COLORS.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 40 },
