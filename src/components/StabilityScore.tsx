@@ -17,11 +17,11 @@ type Props = { score: number; label: string };
 //   ·                   ·
 //  (L, CY) ─────── (R, CY)   ← flat bottom / diameter
 //
-const W  = 200;
+const W  = 220;  // wider canvas so the arc never crowds the edges
 const H  = 120;
-const CX = 100;
+const CX = 110;
 const CY = 110; // center of the circle — arc rises above this
-const R  = 90;
+const R  = 80;  // radius kept clear of the SVG edges: stroke (8px) lands at x=22, x=198
 const SW = 16;
 
 /** Map a math-convention angle (0°=right, 90°=up) to SVG pixel coords. */
@@ -186,8 +186,8 @@ function InfoRow({ emoji, text }: { emoji: string; text: string }) {
 }
 
 const styles = StyleSheet.create({
-  container:  { backgroundColor: COLORS.card, borderRadius: 16, padding: 16, alignItems: 'center', marginBottom: 16, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
-  svgWrap:    { overflow: 'visible' },
+  container:  { backgroundColor: COLORS.card, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 24, alignItems: 'center', marginBottom: 16, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
+  svgWrap:    { overflow: 'visible', alignSelf: 'center' },
   heading:    { fontSize: 13, fontWeight: '600', color: COLORS.textMuted, marginBottom: 4 },
   label:      { fontSize: 15, fontWeight: '700', marginTop: 4 },
   tapHint:    { fontSize: 11, color: COLORS.textMuted, marginTop: 6 },
