@@ -2,8 +2,12 @@ services:
   - type: web
     name: bravely-path
     env: static
-    buildCommand: npm install && npx expo export --platform web && echo "/* /index.html 200" > dist/_redirects
+    buildCommand: npm install && npx expo export --platform web
     staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
       - key: EXPO_PUBLIC_API_URL
         value: https://clearpath-backend-marl.onrender.com/v1
