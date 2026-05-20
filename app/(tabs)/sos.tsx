@@ -9,6 +9,7 @@ import { useFocusEffect } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import api from '../../src/services/api';
 import { COLORS, ADDICTIONS } from '../../src/constants';
+import { getHelplinesByLocale, openHelpline, type Helpline } from '../../src/constants/helplines';
 import { useOffline } from '../../src/hooks/useOffline';
 import { getCachedCopingTips } from '../../src/services/offlineCache';
 import { pauseMusic, getMusicEnabled, playMusic } from '../../src/services/audioPlayer';
@@ -221,8 +222,53 @@ export default function SosScreen() {
             <Text style={styles.loggedText}>Logged</Text>
           </View>
         )}
+
+        {/* Crisis helplines — always visible */}
+        <HelplineSection locale={user?.locale ?? 'en-US'} />
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function HelplineSection({ locale }: { locale: string }) {
+  const helplines = getHelplinesByLocale(locale);
+  return (
+    <View style={styles.helpCard}>
+      <View style={styles.helpHeader}>
+        <Ionicons name="call" size={18} color={COLORS.danger} />
+        <Text style={styles.helpTitle}>Emergency &amp; Crisis Contacts</Text>
+      </View>
+      <Text style={styles.helpNote}>
+        Not sure which number to call?{'\n'}
+        Dial 112 — works in most countries and connects you to local emergency services.
+      </Text>
+      {helplines.map((h, i) => (
+        <HelplineRow key={i} h={h} />
+      ))}
+    </View>
+  );
+}
+
+function HelplineRow({ h }: { h: Helpline }) {
+  return (
+    <TouchableOpacity
+      style={[styles.helpRow, h.isEmergency && styles.helpRowEmergency]}
+      onPress={() => openHelpline(h)}
+      activeOpacity={0.7}
+    >
+      <View style={styles.helpRowLeft}>
+        {h.isEmergency && (
+          <Ionicons name="alert-circle" size={15} color={COLORS.danger} style={{ marginRight: 4 }} />
+        )}
+        <Text style={[styles.helpName, h.isEmergency && styles.helpNameEmergency]}>
+          {h.name}
+        </Text>
+      </View>
+      <View style={styles.helpRowRight}>
+        <Text style={[styles.helpNumber, h.isWeb && styles.helpNumberWeb]}>{h.number}</Text>
+        {h.available && <Text style={styles.helpAvail}>{h.available}</Text>}
+      </View>
+    </TouchableOpacity>
   );
 }
 
@@ -259,4 +305,17 @@ const styles = StyleSheet.create({
   outcomeBtnText:   { fontWeight: '700', fontSize: 14, color: '#fff' },
   loggedBadge:      { flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'center', paddingVertical: 10 },
   loggedText:       { color: COLORS.secondary, fontWeight: '600', fontSize: 14 },
+  helpCard:         { backgroundColor: COLORS.card, borderRadius: 16, padding: 18, marginTop: 8, borderWidth: 1.5, borderColor: COLORS.danger + '30' },
+  helpHeader:       { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  helpTitle:        { fontSize: 15, fontWeight: '700', color: COLORS.danger },
+  helpNote:         { fontSize: 12, color: COLORS.textMuted, marginBottom: 14, lineHeight: 18 },
+  helpRow:          { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: COLORS.border },
+  helpRowEmergency: { backgroundColor: COLORS.danger + '08', marginHorizontal: -18, paddingHorizontal: 18, borderTopColor: COLORS.danger + '30' },
+  helpRowLeft:      { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 },
+  helpName:         { fontSize: 13, color: COLORS.text, fontWeight: '500', flexShrink: 1 },
+  helpNameEmergency:{ color: COLORS.danger, fontWeight: '700' },
+  helpRowRight:     { alignItems: 'flex-end' },
+  helpNumber:       { fontSize: 13, color: COLORS.primary, fontWeight: '700' },
+  helpNumberWeb:    { color: COLORS.textMuted, fontSize: 11, fontWeight: '500' },
+  helpAvail:        { fontSize: 10, color: COLORS.textMuted, marginTop: 1 },
 });

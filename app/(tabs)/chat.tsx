@@ -13,6 +13,7 @@ import Constants from 'expo-constants';
 import { useAuth } from '../../src/context/AuthContext';
 import { usePremium } from '../../src/context/PremiumContext';
 import { COLORS, API_BASE_URL } from '../../src/constants';
+import { openHelpline } from '../../src/constants/helplines';
 import { UpgradePrompt } from '../../src/components/UpgradePrompt';
 
 // expo-speech-recognition requires a custom native build.
@@ -300,9 +301,27 @@ export default function ChatScreen() {
 
       {crisis && (
         <View style={styles.crisisBox}>
-          <Text style={styles.crisisTitle}>If you need immediate help:</Text>
+          <View style={styles.crisisHeader}>
+            <Ionicons name="alert-circle" size={16} color={COLORS.danger} />
+            <Text style={styles.crisisTitle}>If you need immediate help:</Text>
+          </View>
+          <Text style={styles.crisisNote}>
+            Not sure which number to call? Dial 112 — works in 190+ countries.
+          </Text>
           {crisis.helplines?.map((h: any, i: number) => (
-            <Text key={i} style={styles.crisisLine}>{h.name}: {h.number}</Text>
+            <TouchableOpacity
+              key={i}
+              style={[styles.crisisRow, i === 0 && styles.crisisRowEmergency]}
+              onPress={() => openHelpline(h)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.crisisName, i === 0 && styles.crisisNameEmergency]}>
+                {h.name}
+              </Text>
+              <Text style={[styles.crisisNumber, i === 0 && styles.crisisNumberEmergency]}>
+                {h.number}
+              </Text>
+            </TouchableOpacity>
           ))}
         </View>
       )}
@@ -413,9 +432,16 @@ const styles = StyleSheet.create({
   headerSub:       { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
   limitBanner:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 7, backgroundColor: COLORS.background, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   limitBannerText: { fontSize: 12, color: COLORS.textMuted },
-  crisisBox:       { backgroundColor: '#FEF2F2', borderLeftWidth: 4, borderLeftColor: COLORS.danger, padding: 16, margin: 12, borderRadius: 8 },
-  crisisTitle:     { color: COLORS.danger, fontWeight: '700', marginBottom: 6 },
-  crisisLine:      { color: '#7F1D1D', fontSize: 13, marginBottom: 2 },
+  crisisBox:            { backgroundColor: '#FEF2F2', borderLeftWidth: 4, borderLeftColor: COLORS.danger, padding: 16, margin: 12, borderRadius: 8 },
+  crisisHeader:         { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
+  crisisTitle:          { color: COLORS.danger, fontWeight: '700', fontSize: 14 },
+  crisisNote:           { fontSize: 11, color: '#9B1C1C', marginBottom: 10, lineHeight: 16 },
+  crisisRow:            { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6, borderTopWidth: 1, borderTopColor: '#FECACA' },
+  crisisRowEmergency:   { backgroundColor: '#FEE2E2', marginHorizontal: -16, paddingHorizontal: 16, borderTopColor: '#FCA5A5' },
+  crisisName:           { fontSize: 12, color: '#7F1D1D', flex: 1, marginRight: 8 },
+  crisisNameEmergency:  { fontWeight: '700', color: COLORS.danger },
+  crisisNumber:         { fontSize: 13, color: '#991B1B', fontWeight: '600' },
+  crisisNumberEmergency:{ fontSize: 15, fontWeight: '800', color: COLORS.danger },
   messageList:     { padding: 16, paddingBottom: 8 },
   bubbleRow:       { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 10 },
   bubbleRowRight:  { justifyContent: 'flex-end' },
