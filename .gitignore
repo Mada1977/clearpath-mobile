@@ -38,3 +38,6 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# web build output — built fresh by Render on every deploy
+/dist
