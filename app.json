@@ -1,8 +1,9 @@
 {
   "expo": {
-    "name": "Bravely Path",
+    "name": "Bravely Path — Sobriety & Recovery",
     "slug": "bravely-path",
     "version": "1.0.0",
+    "description": "AI-powered addiction recovery coach. Track sobriety, beat cravings, get 24/7 support. Crisis helplines in 10 languages.",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -15,7 +16,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "icon": "./assets/icon.png"
+      "icon": "./assets/icon.png",
+      "keywords": "sobriety,addiction recovery,quit drinking,recovery coach,sober tracker,sobriety counter,alcohol free"
     },
     "android": {
       "package": "com.bravelypath.app",
@@ -34,6 +36,12 @@
       "expo-router",
       "expo-secure-store",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c7d6bada-0900-4717-87fa-101124490758"
+      }
+    }
   }
 }
