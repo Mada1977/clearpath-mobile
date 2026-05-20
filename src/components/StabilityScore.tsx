@@ -1,84 +1,17 @@
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
-import Svg, { Path, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import { COLORS } from '../constants';
 
 type Props = { score: number; label: string };
 
-// ─── Gauge geometry ───────────────────────────────────────────────────────────
-// The center (CX, CY) sits at the bottom of the SVG so the arc sweeps upward.
-// The two arc endpoints share y=CY (the "flat bottom"), and the apex is at
-// (CX, CY-R) — the highest point of the rainbow.
-//
-//        apex (CX, CY-R)
-//       .  ·  ·  .
-//     .               .
-//    .    [score]      .
-//   ·                   ·
-//  (L, CY) ─────── (R, CY)   ← flat bottom / diameter
-//
-const W  = 220;  // wider canvas so the arc never crowds the edges
-const H  = 120;
-const CX = 110;
-const CY = 110; // center of the circle — arc rises above this
-const R  = 80;  // radius kept clear of the SVG edges: stroke (8px) lands at x=22, x=198
-const SW = 16;
-
-/** Map a math-convention angle (0°=right, 90°=up) to SVG pixel coords. */
-function pt(deg: number) {
-  const rad = (deg * Math.PI) / 180;
-  return {
-    x: +(CX + R * Math.cos(rad)).toFixed(2),
-    y: +(CY - R * Math.sin(rad)).toFixed(2), // subtract → arc goes UP
-  };
-}
-
-/**
- * Build an SVG arc from startDeg→endDeg (math convention, decreasing 180→0).
- *
- * The critical fix: when the arc crosses the apex (90°) we split it into two
- * 90° segments.  Each segment must use the correct sweep flag:
- *
- *   Left side  (left → apex): CCW on screen  → sweep=0  (goes upward from left)
- *   Right side (apex → right): CW on screen  → sweep=1  (goes down-right from apex)
- *
- * Using sweep=0 for the right side is wrong — it would trace the 270° arc
- * going backward, creating a tangled shape that looks like a pointed mountain.
- */
-function buildArc(startDeg: number, endDeg: number): string {
-  if (Math.abs(startDeg - endDeg) < 0.5) return '';
-
-  const s = pt(startDeg);
-  const e = pt(endDeg);
-
-  if (startDeg > 90 && endDeg < 90) {
-    // Arc crosses the apex — split there.
-    const apex = pt(90);
-    return (
-      `M ${s.x} ${s.y} A ${R} ${R} 0 0 0 ${apex.x} ${apex.y}` +
-      ` A ${R} ${R} 0 0 1 ${e.x} ${e.y}`
-    );
-  }
-
-  if (endDeg >= 90) {
-    // Entirely in the left quadrant (start 90°–180°, end 90°–180°): CCW.
-    return `M ${s.x} ${s.y} A ${R} ${R} 0 0 0 ${e.x} ${e.y}`;
-  }
-
-  // Entirely in the right quadrant (start 0°–90°, end 0°–90°): CW.
-  return `M ${s.x} ${s.y} A ${R} ${R} 0 0 1 ${e.x} ${e.y}`;
-}
-
-// Full-semicircle track — always uses the split path.
-const TRACK_D = (() => {
-  const left  = pt(180);
-  const apex  = pt(90);
-  const right = pt(0);
-  return (
-    `M ${left.x} ${left.y} A ${R} ${R} 0 0 0 ${apex.x} ${apex.y}` +
-    ` A ${R} ${R} 0 0 1 ${right.x} ${right.y}`
-  );
-})();
+// ─── Gauge constants ──────────────────────────────────────────────────────────
+const CX   = 100;
+const CY   = 100;
+const R    = 80;
+const SW   = 14;
+const HALF = Math.PI * R;       // half circumference ≈ 251.3 — one semicircle
+const FULL = 2 * Math.PI * R;   // full circumference ≈ 502.7
 
 function scoreColor(score: number) {
   if (score >= 70) return COLORS.secondary; // green
@@ -89,13 +22,15 @@ function scoreColor(score: number) {
 export function StabilityScore({ score, label }: Props) {
   const [infoVisible, setInfoVisible] = useState(false);
 
-  // Fill sweeps from left (180°) toward right (0°), proportional to score.
-  const fillEndDeg = 180 - (Math.min(score, 100) / 100) * 180;
-  const fillD      = score > 0 ? buildArc(180, fillEndDeg) : '';
-  const color      = scoreColor(score);
+  const s     = Math.min(Math.max(score, 0), 100);
+  const color = scoreColor(s);
 
-  // Score text sits in the lower half of the arch interior.
-  const textY = CY - 24;
+  // How much of the semicircle to fill with colour.
+  const fillLen = (s / 100) * HALF;
+  const gapLen  = FULL - fillLen;
+
+  // strokeDashoffset = HALF shifts the dash start to the 9-o'clock position
+  // so the visible arc sweeps across the upper half (left → apex → right).
 
   return (
     <>
@@ -106,41 +41,52 @@ export function StabilityScore({ score, label }: Props) {
       >
         <Text style={styles.heading}>Daily stability score</Text>
 
-        <View style={styles.svgWrap}>
-          <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} overflow="visible">
-            {/* Grey track — full upper semicircle */}
-            <Path
-              d={TRACK_D}
+        <Svg
+          width={200}
+          height={110}
+          viewBox="0 0 200 110"
+          overflow="visible"
+        >
+          {/* Grey track — full upper semicircle */}
+          <Circle
+            cx={CX}
+            cy={CY}
+            r={R}
+            fill="none"
+            stroke={COLORS.border}
+            strokeWidth={SW}
+            strokeDasharray={`${HALF} ${HALF}`}
+            strokeDashoffset={HALF}
+            strokeLinecap="round"
+          />
+
+          {/* Coloured progress — same offset, shorter first dash */}
+          {s > 0 && (
+            <Circle
+              cx={CX}
+              cy={CY}
+              r={R}
               fill="none"
-              stroke={COLORS.border}
+              stroke={color}
               strokeWidth={SW}
+              strokeDasharray={`${fillLen} ${gapLen}`}
+              strokeDashoffset={HALF}
               strokeLinecap="round"
             />
+          )}
 
-            {/* Coloured fill — grows left-to-right with score */}
-            {fillD !== '' && (
-              <Path
-                d={fillD}
-                fill="none"
-                stroke={color}
-                strokeWidth={SW}
-                strokeLinecap="round"
-              />
-            )}
-
-            {/* Score number centred inside the arch */}
-            <SvgText
-              x={CX}
-              y={textY}
-              textAnchor="middle"
-              fontSize="36"
-              fontWeight="900"
-              fill={color}
-            >
-              {score}
-            </SvgText>
-          </Svg>
-        </View>
+          {/* Score number — centred inside the arc */}
+          <SvgText
+            x={CX}
+            y={88}
+            textAnchor="middle"
+            fontSize="34"
+            fontWeight="900"
+            fill={color}
+          >
+            {s}
+          </SvgText>
+        </Svg>
 
         <Text style={[styles.label, { color }]}>{label}</Text>
         <Text style={styles.tapHint}>Tap to learn more</Text>
@@ -187,7 +133,6 @@ function InfoRow({ emoji, text }: { emoji: string; text: string }) {
 
 const styles = StyleSheet.create({
   container:  { backgroundColor: COLORS.card, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 24, alignItems: 'center', marginBottom: 16, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
-  svgWrap:    { overflow: 'visible', alignSelf: 'center' },
   heading:    { fontSize: 13, fontWeight: '600', color: COLORS.textMuted, marginBottom: 4 },
   label:      { fontSize: 15, fontWeight: '700', marginTop: 4 },
   tapHint:    { fontSize: 11, color: COLORS.textMuted, marginTop: 6 },
