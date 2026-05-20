@@ -122,34 +122,6 @@ export default function PaywallScreen() {
     }
   }
 
-  // Web / no-RC fallback — uses the backend trial/upgrade endpoints
-  async function handleWebFallback() {
-    setLoading(true);
-    try {
-      if (!isPremium) {
-        await api.post('/users/me/start-trial');
-        await refreshUser();
-        Alert.alert(
-          'Trial started! 🎉',
-          'Your 3-day free trial has begun. Enjoy full access to Bravely Path.',
-          [{ text: 'Great!', onPress: () => router.back() }]
-        );
-      } else {
-        await api.post('/users/me/upgrade', { plan: selectedPlan });
-        await refreshUser();
-        Alert.alert(
-          'Welcome to Premium! ⭐',
-          `You're now on the ${selectedPlan} plan.`,
-          [{ text: "Let's go!", onPress: () => router.back() }]
-        );
-      }
-    } catch (err: any) {
-      Alert.alert('Error', err?.response?.data?.error ?? 'Could not complete purchase.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function handleRestore() {
     setLoading(true);
     try {
@@ -164,11 +136,7 @@ export default function PaywallScreen() {
   }
 
   function handleCta() {
-    if (isNative && offering) {
-      handleNativePurchase();
-    } else {
-      handleWebFallback();
-    }
+    handleNativePurchase();
   }
 
   // ── CTA label ─────────────────────────────────────────────────────────────
@@ -184,7 +152,50 @@ export default function PaywallScreen() {
     return 'Start 3-day free trial';
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ── Web-only screen ───────────────────────────────────────────────────────
+
+  if (!isNative) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <ScrollView contentContainerStyle={styles.container}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={20} color={COLORS.primary} />
+            <Text style={styles.backText}>Back</Text>
+          </TouchableOpacity>
+
+          <View style={styles.webCard}>
+            <Text style={styles.webIcon}>📱</Text>
+            <Text style={styles.webTitle}>Subscribe on the mobile app</Text>
+            <Text style={styles.webBody}>
+              In-app purchases are available on iOS and Android only.
+              Download Bravely Path on your phone to unlock Premium.
+            </Text>
+
+            <View style={styles.webPlanList}>
+              {PLANS.map(plan => (
+                <View key={plan.key} style={styles.webPlanRow}>
+                  <Text style={styles.webPlanLabel}>{plan.label}</Text>
+                  <Text style={styles.webPlanPrice}>{plan.price}<Text style={styles.webPlanPeriod}>{plan.period}</Text></Text>
+                </View>
+              ))}
+            </View>
+
+            <Text style={styles.webHint}>Weekly plan includes a 3-day free trial.</Text>
+          </View>
+
+          {isPremium && (
+            <View style={styles.premiumBanner}>
+              <Text style={styles.premiumBannerText}>
+                {isOnTrial ? `⭐ Trial — ${trialDaysLeft} day${trialDaysLeft !== 1 ? 's' : ''} left` : '⭐ You have Premium'}
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // ── Native render ─────────────────────────────────────────────────────────
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -275,16 +286,9 @@ export default function PaywallScreen() {
             : <Text style={styles.ctaBtnText}>{ctaLabel()}</Text>}
         </TouchableOpacity>
 
-        {isNative && (
-          <TouchableOpacity style={styles.restoreBtn} onPress={handleRestore} disabled={loading}>
-            <Text style={styles.restoreText}>Already subscribed? Restore purchase</Text>
-          </TouchableOpacity>
-        )}
-        {!isNative && (
-          <TouchableOpacity style={styles.restoreBtn}>
-            <Text style={styles.restoreText}>Already subscribed? Restore purchase</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity style={styles.restoreBtn} onPress={handleRestore} disabled={loading}>
+          <Text style={styles.restoreText}>Already subscribed? Restore purchase</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -326,4 +330,15 @@ const styles = StyleSheet.create({
   ctaBtnText:       { color: '#fff', fontSize: 16, fontWeight: '800' },
   restoreBtn:       { alignItems: 'center', paddingVertical: 14 },
   restoreText:      { color: COLORS.textMuted, fontSize: 13 },
+  // Web-only styles
+  webCard:          { backgroundColor: COLORS.card, borderRadius: 20, padding: 28, alignItems: 'center', marginTop: 16, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
+  webIcon:          { fontSize: 52, marginBottom: 16 },
+  webTitle:         { fontSize: 22, fontWeight: '900', color: COLORS.text, textAlign: 'center', marginBottom: 12 },
+  webBody:          { fontSize: 15, color: COLORS.textMuted, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
+  webPlanList:      { width: '100%', gap: 10, marginBottom: 16 },
+  webPlanRow:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: COLORS.background, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12 },
+  webPlanLabel:     { fontSize: 15, fontWeight: '700', color: COLORS.text },
+  webPlanPrice:     { fontSize: 16, fontWeight: '800', color: COLORS.primary },
+  webPlanPeriod:    { fontSize: 12, fontWeight: '400', color: COLORS.textMuted },
+  webHint:          { fontSize: 12, color: COLORS.textMuted, textAlign: 'center' },
 });

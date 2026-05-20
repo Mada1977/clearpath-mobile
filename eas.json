@@ -7,11 +7,17 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_REVENUECAT_API_KEY": "test_eHrYaiNUCxpXjfUerIknfMreHQo"
       }
     },
     "production": {
       "android": {
         "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_REVENUECAT_API_KEY": "test_eHrYaiNUCxpXjfUerIknfMreHQo"
       }
     }
   },

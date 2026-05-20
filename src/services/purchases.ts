@@ -19,10 +19,12 @@ const Purchases: any = RC?.default ?? RC?.Purchases ?? null;
 
 export function configurePurchases(userId: string): void {
   if (!Purchases) return;
+  // Single shared key takes priority; platform-specific keys are the fallback
   const key =
-    Platform.OS === 'ios'
+    process.env.EXPO_PUBLIC_REVENUECAT_API_KEY ??
+    (Platform.OS === 'ios'
       ? (process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? '')
-      : (process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ?? '');
+      : (process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ?? ''));
   if (!key) return;
   try {
     Purchases.setLogLevel(RC.LOG_LEVEL?.ERROR ?? 4);
