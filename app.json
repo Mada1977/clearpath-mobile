@@ -14,12 +14,13 @@
       "backgroundColor": "#4F46E5"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "icon": "./assets/icon.png"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#0C2A4A"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
