@@ -5,11 +5,12 @@ import { COLORS } from '../constants';
 
 type Props = { score: number; label: string };
 
-const W = 160;
-const CX = 80;
-const CY = 80;
-const R  = 58;
-const SW = 14; // stroke width
+const W  = 200;
+const H  = 120;
+const CX = 100;
+const CY = 105; // center near bottom so the upper arc has full headroom
+const R  = 82;
+const SW = 14;
 
 function polarToXY(angleDeg: number) {
   const rad = angleDeg * (Math.PI / 180);
@@ -48,7 +49,7 @@ export function StabilityScore({ score, label }: Props) {
     <>
       <TouchableOpacity style={styles.container} onPress={() => setInfoVisible(true)} activeOpacity={0.85}>
         <Text style={styles.heading}>Daily stability score</Text>
-        <Svg width={W} height={94} viewBox={`0 0 ${W} 94`}>
+        <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
           {/* Track */}
           <Path d={TRACK_D} fill="none" stroke={COLORS.border} strokeWidth={SW} strokeLinecap="round" />
           {/* Fill */}
