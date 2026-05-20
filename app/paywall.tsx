@@ -12,9 +12,9 @@ import { useAuth } from '../src/context/AuthContext';
 import { usePremium } from '../src/context/PremiumContext';
 
 const PLANS = [
-  { key: 'weekly',  price: '€3.99',  period: '/week',  label: 'Weekly',  badge: null,          trialNote: '7 days free, then €3.99/week' },
-  { key: 'monthly', price: '€9.99',  period: '/month', label: 'Monthly', badge: 'Most popular', trialNote: '7 days free, then €9.99/month' },
-  { key: 'yearly',  price: '€59.99', period: '/year',  label: 'Yearly',  badge: 'Best value — save 50%', trialNote: '7 days free, then €59.99/year' },
+  { key: 'weekly',  price: '€6.99',  period: '/week',  label: 'Weekly',  badge: null,          trialNote: '3 days free, then €6.99/week' },
+  { key: 'monthly', price: '€9.99',  period: '/month', label: 'Monthly', badge: 'Most popular', trialNote: '3 days free, then €9.99/month' },
+  { key: 'yearly',  price: '€59.99', period: '/year',  label: 'Yearly',  badge: 'Best value — save 50%', trialNote: '3 days free, then €59.99/year' },
 ];
 
 const FEATURES = [
@@ -42,7 +42,7 @@ export default function PaywallScreen() {
       await refreshUser();
       Alert.alert(
         'Trial started! 🎉',
-        'Your 7-day free trial has begun. Enjoy full access to Bravely Path.',
+        'Your 3-day free trial has begun. Enjoy full access to Bravely Path.',
         [{ text: 'Great!', onPress: () => router.back() }]
       );
     } catch (err: any) {
@@ -151,7 +151,7 @@ export default function PaywallScreen() {
           >
             {loading
               ? <ActivityIndicator color="#fff" />
-              : <Text style={styles.ctaBtnText}>Start 7-day free trial</Text>}
+              : <Text style={styles.ctaBtnText}>Start 3-day free trial</Text>}
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
