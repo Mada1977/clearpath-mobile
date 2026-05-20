@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,7 +7,7 @@ import api from '../../src/services/api';
 import { COLORS, ADDICTIONS } from '../../src/constants';
 import { useOffline } from '../../src/hooks/useOffline';
 import { cacheStats, getCachedStats, cacheCopingTips } from '../../src/services/offlineCache';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { StabilityScore } from '../../src/components/StabilityScore';
 import { getMusicEnabled, loadMusic, playMusic } from '../../src/services/audioPlayer';
 
@@ -34,11 +34,17 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [trackers, setTrackers]   = useState<TrackerSummary[]>([]);
   const [stability, setStability] = useState<StabilityData | null>(null);
+  // Refresh data every time this tab comes into focus (e.g. after logging)
+  useFocusEffect(
+    useCallback(() => {
+      fetchStats();
+      fetchTrackers();
+      fetchStability();
+    }, [])
+  );
+
+  // Start music once on mount
   useEffect(() => {
-    fetchStats();
-    fetchTrackers();
-    fetchStability();
-    // Start music if the user has it enabled
     loadMusic().then(() => getMusicEnabled().then(on => { if (on) playMusic(); }));
   }, []);
 
