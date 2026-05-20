@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Alert, ActivityIndicator, TextInput, Modal, Share, Switch,
+  Alert, ActivityIndicator, TextInput, Modal, Share, Switch, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -49,6 +49,7 @@ export default function ProfileScreen() {
   const [musicEnabled, setMusicEnabled] = useState(false);
   const [musicUnavailable, setMusicUnavailable] = useState(false);
   const [ttsEnabled, setTtsEnabled] = useState(true);
+  const [emailReminder, setEmailReminder] = useState(user?.emailReminderEnabled ?? false);
 
   useEffect(() => {
     loadMusic().then(ok => {
@@ -69,6 +70,15 @@ export default function ProfileScreen() {
   async function handleTtsToggle(val: boolean) {
     setTtsEnabled(val);
     await AsyncStorage.setItem('bp_tts_enabled', val ? 'true' : 'false');
+  }
+
+  async function handleEmailReminderToggle(val: boolean) {
+    setEmailReminder(val);
+    try {
+      await api.patch('/users/me', { emailReminderEnabled: val });
+    } catch {
+      setEmailReminder(!val);
+    }
   }
 
   useFocusEffect(useCallback(() => {
@@ -174,6 +184,10 @@ export default function ProfileScreen() {
   }
 
   async function handleLogout() {
+    if (Platform.OS === 'web') {
+      if (window.confirm('Are you sure you want to sign out?')) await logout();
+      return;
+    }
     Alert.alert('Sign out', 'Are you sure?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Sign out', style: 'destructive', onPress: logout },
@@ -289,6 +303,22 @@ export default function ProfileScreen() {
               onValueChange={handleTtsToggle}
               trackColor={{ false: COLORS.border, true: COLORS.primary + '80' }}
               thumbColor={ttsEnabled ? COLORS.primary : '#f4f3f4'}
+            />
+          </View>
+
+          <View style={[styles.settingRow, { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: COLORS.border }]}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="mail-outline" size={20} color={COLORS.primary} />
+              <View style={{ marginLeft: 12 }}>
+                <Text style={styles.settingLabel}>Daily check-in email</Text>
+                <Text style={styles.settingSub}>Reminder at 9am to log your day</Text>
+              </View>
+            </View>
+            <Switch
+              value={emailReminder}
+              onValueChange={handleEmailReminderToggle}
+              trackColor={{ false: COLORS.border, true: COLORS.primary + '80' }}
+              thumbColor={emailReminder ? COLORS.primary : '#f4f3f4'}
             />
           </View>
         </View>

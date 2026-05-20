@@ -20,6 +20,7 @@ export type User = {
   trialDaysLeft: number | null;
   isOnTrial: boolean;
   notificationPrivacy: boolean;
+  emailReminderEnabled: boolean;
 };
 
 type AuthContextType = {

@@ -106,6 +106,12 @@ export default function LoginScreen() {
           </View>
         )}
 
+        <Link href="/(auth)/forgot-password" asChild>
+          <TouchableOpacity style={styles.forgotLink}>
+            <Text style={styles.forgotText}>Forgot password?</Text>
+          </TouchableOpacity>
+        </Link>
+
         <Link href="/(auth)/register" asChild>
           <TouchableOpacity style={styles.link}>
             <Text style={styles.linkText}>Don't have an account? <Text style={styles.linkBold}>Sign up</Text></Text>
@@ -139,7 +145,9 @@ const styles = StyleSheet.create({
   buttonText:   { color: '#fff', fontSize: 16, fontWeight: '700' },
   errorBox:     { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: '#FEF2F2', borderRadius: 10, padding: 12, marginTop: 12 },
   errorText:    { flex: 1, color: COLORS.danger, fontSize: 14, lineHeight: 20 },
-  link:         { marginTop: 24, alignItems: 'center' },
+  forgotLink:   { alignItems: 'center', paddingVertical: 12 },
+  forgotText:   { color: COLORS.primary, fontSize: 14, fontWeight: '600' },
+  link:         { marginTop: 8, alignItems: 'center' },
   linkText:     { color: COLORS.textMuted, fontSize: 14 },
   linkBold:     { color: COLORS.primary, fontWeight: '600' },
 });

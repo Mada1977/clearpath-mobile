@@ -2,7 +2,7 @@ services:
   - type: web
     name: bravely-path
     env: static
-    buildCommand: npm install && npx expo export --platform web
+    buildCommand: npm install && npx expo export --platform web && echo "/* /index.html 200" > dist/_redirects
     staticPublishPath: dist
     routes:
       - type: rewrite
