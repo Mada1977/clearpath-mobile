@@ -5,29 +5,46 @@ import { COLORS } from '../constants';
 
 type Props = { score: number; label: string };
 
-// Gauge geometry — center sits near the bottom so the rainbow arc has
-// full headroom above it inside the 200×120 viewBox.
+// ─── Gauge geometry ───────────────────────────────────────────────────────────
+// The center (CX, CY) sits at the bottom of the SVG so the arc sweeps upward.
+// The two arc endpoints share y=CY (the "flat bottom"), and the apex is at
+// (CX, CY-R) — the highest point of the rainbow.
+//
+//        apex (CX, CY-R)
+//       .  ·  ·  .
+//     .               .
+//    .    [score]      .
+//   ·                   ·
+//  (L, CY) ─────── (R, CY)   ← flat bottom / diameter
+//
 const W  = 200;
 const H  = 120;
 const CX = 100;
-const CY = 110;
+const CY = 110; // center of the circle — arc rises above this
 const R  = 90;
 const SW = 16;
 
-// Map a math-convention angle (0°=right, 90°=up) to SVG pixel coords.
+/** Map a math-convention angle (0°=right, 90°=up) to SVG pixel coords. */
 function pt(deg: number) {
   const rad = (deg * Math.PI) / 180;
   return {
     x: +(CX + R * Math.cos(rad)).toFixed(2),
-    y: +(CY - R * Math.sin(rad)).toFixed(2),
+    y: +(CY - R * Math.sin(rad)).toFixed(2), // subtract → arc goes UP
   };
 }
 
-// Build an SVG arc path from startDeg→endDeg (both in math convention,
-// decreasing from 180→0 sweeps left-to-right along the upper arc).
-// We always split at 90° (the topmost point) so no single arc command
-// ever spans the full 180° diameter — that degenerate case causes some
-// renderers to draw the wrong semicircle.
+/**
+ * Build an SVG arc from startDeg→endDeg (math convention, decreasing 180→0).
+ *
+ * The critical fix: when the arc crosses the apex (90°) we split it into two
+ * 90° segments.  Each segment must use the correct sweep flag:
+ *
+ *   Left side  (left → apex): CCW on screen  → sweep=0  (goes upward from left)
+ *   Right side (apex → right): CW on screen  → sweep=1  (goes down-right from apex)
+ *
+ * Using sweep=0 for the right side is wrong — it would trace the 270° arc
+ * going backward, creating a tangled shape that looks like a pointed mountain.
+ */
 function buildArc(startDeg: number, endDeg: number): string {
   if (Math.abs(startDeg - endDeg) < 0.5) return '';
 
@@ -35,20 +52,33 @@ function buildArc(startDeg: number, endDeg: number): string {
   const e = pt(endDeg);
 
   if (startDeg > 90 && endDeg < 90) {
-    // Arc crosses the apex — split into two ≤90° segments.
+    // Arc crosses the apex — split there.
     const apex = pt(90);
     return (
-      `M ${s.x} ${s.y} A ${R} ${R} 0 0 0 ${apex.x} ${apex.y} ` +
-      `A ${R} ${R} 0 0 0 ${e.x} ${e.y}`
+      `M ${s.x} ${s.y} A ${R} ${R} 0 0 0 ${apex.x} ${apex.y}` +
+      ` A ${R} ${R} 0 0 1 ${e.x} ${e.y}`
     );
   }
 
-  // Single arc, at most 90° — no degenerate case.
-  return `M ${s.x} ${s.y} A ${R} ${R} 0 0 0 ${e.x} ${e.y}`;
+  if (endDeg >= 90) {
+    // Entirely in the left quadrant (start 90°–180°, end 90°–180°): CCW.
+    return `M ${s.x} ${s.y} A ${R} ${R} 0 0 0 ${e.x} ${e.y}`;
+  }
+
+  // Entirely in the right quadrant (start 0°–90°, end 0°–90°): CW.
+  return `M ${s.x} ${s.y} A ${R} ${R} 0 0 1 ${e.x} ${e.y}`;
 }
 
-// Full track: left (180°) → apex (90°) → right (0°).
-const TRACK_D = buildArc(180, 0);
+// Full-semicircle track — always uses the split path.
+const TRACK_D = (() => {
+  const left  = pt(180);
+  const apex  = pt(90);
+  const right = pt(0);
+  return (
+    `M ${left.x} ${left.y} A ${R} ${R} 0 0 0 ${apex.x} ${apex.y}` +
+    ` A ${R} ${R} 0 0 1 ${right.x} ${right.y}`
+  );
+})();
 
 function scoreColor(score: number) {
   if (score >= 70) return COLORS.secondary; // green
@@ -59,25 +89,26 @@ function scoreColor(score: number) {
 export function StabilityScore({ score, label }: Props) {
   const [infoVisible, setInfoVisible] = useState(false);
 
-  // Fill sweeps from the left endpoint toward the right, proportional to score.
+  // Fill sweeps from left (180°) toward right (0°), proportional to score.
   const fillEndDeg = 180 - (Math.min(score, 100) / 100) * 180;
   const fillD      = score > 0 ? buildArc(180, fillEndDeg) : '';
   const color      = scoreColor(score);
 
+  // Score text sits in the lower half of the arch interior.
+  const textY = CY - 24;
+
   return (
     <>
-      <TouchableOpacity style={styles.container} onPress={() => setInfoVisible(true)} activeOpacity={0.85}>
+      <TouchableOpacity
+        style={styles.container}
+        onPress={() => setInfoVisible(true)}
+        activeOpacity={0.85}
+      >
         <Text style={styles.heading}>Daily stability score</Text>
 
-        {/* overflow:visible on the wrapper lets the arc escape any parent clip */}
         <View style={styles.svgWrap}>
-          <Svg
-            width={W}
-            height={H}
-            viewBox={`0 0 ${W} ${H}`}
-            overflow="visible"
-          >
-            {/* Grey track — full semicircle */}
+          <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} overflow="visible">
+            {/* Grey track — full upper semicircle */}
             <Path
               d={TRACK_D}
               fill="none"
@@ -86,7 +117,7 @@ export function StabilityScore({ score, label }: Props) {
               strokeLinecap="round"
             />
 
-            {/* Coloured fill — proportional to score */}
+            {/* Coloured fill — grows left-to-right with score */}
             {fillD !== '' && (
               <Path
                 d={fillD}
@@ -97,12 +128,12 @@ export function StabilityScore({ score, label }: Props) {
               />
             )}
 
-            {/* Score number — centred inside the arc */}
+            {/* Score number centred inside the arch */}
             <SvgText
               x={CX}
-              y={CY - 18}
+              y={textY}
               textAnchor="middle"
-              fontSize="34"
+              fontSize="36"
               fontWeight="900"
               fill={color}
             >
@@ -121,7 +152,11 @@ export function StabilityScore({ score, label }: Props) {
         animationType="fade"
         onRequestClose={() => setInfoVisible(false)}
       >
-        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setInfoVisible(false)}>
+        <TouchableOpacity
+          style={styles.overlay}
+          activeOpacity={1}
+          onPress={() => setInfoVisible(false)}
+        >
           <TouchableOpacity activeOpacity={1} onPress={() => {}}>
             <View style={styles.sheet}>
               <Text style={styles.sheetTitle}>What affects your score?</Text>
@@ -130,7 +165,9 @@ export function StabilityScore({ score, label }: Props) {
               <InfoRow emoji="📉" text="−20 if you haven't checked in for 24 hours." />
               <InfoRow emoji="😔" text="−10 to −15 if your last check-ins show slips." />
               <InfoRow emoji="🔴" text="Score below 40 → high risk. The crisis button is always available." />
-              <Text style={styles.sheetNote}>Your score resets and recalculates each time you open the app.</Text>
+              <Text style={styles.sheetNote}>
+                Your score resets and recalculates each time you open the app.
+              </Text>
             </View>
           </TouchableOpacity>
         </TouchableOpacity>
@@ -152,7 +189,7 @@ const styles = StyleSheet.create({
   container:  { backgroundColor: COLORS.card, borderRadius: 16, padding: 16, alignItems: 'center', marginBottom: 16, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
   svgWrap:    { overflow: 'visible' },
   heading:    { fontSize: 13, fontWeight: '600', color: COLORS.textMuted, marginBottom: 4 },
-  label:      { fontSize: 15, fontWeight: '700', marginTop: 2 },
+  label:      { fontSize: 15, fontWeight: '700', marginTop: 4 },
   tapHint:    { fontSize: 11, color: COLORS.textMuted, marginTop: 6 },
   overlay:    { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
   sheet:      { backgroundColor: COLORS.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 40 },
