@@ -1,4 +1,5 @@
-export const API_BASE_URL = 'https://clearpath-backend-marl.onrender.com/v1';
+export const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL ?? 'https://clearpath-backend-marl.onrender.com/v1';
 
 export const LANGUAGES = [
   { code: 'en', locale: 'en-US', flag: '🇬🇧', label: 'English',    nativeLabel: 'English'    },
