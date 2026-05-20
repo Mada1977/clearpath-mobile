@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, Alert,
+  ActivityIndicator, Alert, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,11 +10,18 @@ import { COLORS } from '../src/constants';
 import api from '../src/services/api';
 import { useAuth } from '../src/context/AuthContext';
 import { usePremium } from '../src/context/PremiumContext';
+import {
+  getOfferings,
+  purchasePackage as rcPurchase,
+  restorePurchases as rcRestore,
+  isCancelledError,
+} from '../src/services/purchases';
 
+// ─── Static fallback plan data ────────────────────────────────────────────────
 const PLANS = [
-  { key: 'weekly',  price: '€6.99',  period: '/week',  label: 'Weekly',  badge: null,          trialNote: '3 days free, then €6.99/week' },
-  { key: 'monthly', price: '€9.99',  period: '/month', label: 'Monthly', badge: 'Most popular', trialNote: '3 days free, then €9.99/month' },
-  { key: 'yearly',  price: '€59.99', period: '/year',  label: 'Yearly',  badge: 'Best value — save 50%', trialNote: '3 days free, then €59.99/year' },
+  { key: 'weekly',  price: '€6.99',  period: '/week',  label: 'Weekly',  badge: null,                    trialNote: '3 days free, then €6.99/week',   rcType: 'WEEKLY'  },
+  { key: 'monthly', price: '€9.99',  period: '/month', label: 'Monthly', badge: 'Most popular',           trialNote: '3 days free, then €9.99/month',  rcType: 'MONTHLY' },
+  { key: 'yearly',  price: '€59.99', period: '/year',  label: 'Yearly',  badge: 'Best value — save 50%', trialNote: '3 days free, then €59.99/year',  rcType: 'ANNUAL'  },
 ];
 
 const FEATURES = [
@@ -28,6 +35,8 @@ const FEATURES = [
   { icon: 'globe',            label: 'All 10 languages',                  free: true,          premium: true         },
 ];
 
+const isNative = Platform.OS === 'ios' || Platform.OS === 'android';
+
 export default function PaywallScreen() {
   const router = useRouter();
   const { refreshUser } = useAuth();
@@ -35,40 +44,147 @@ export default function PaywallScreen() {
   const [selectedPlan, setSelectedPlan] = useState('monthly');
   const [loading, setLoading] = useState(false);
 
-  async function handleStartTrial() {
+  // RevenueCat offerings (null = not loaded or web)
+  const [offering, setOffering] = useState<any | null>(null);
+  const [offeringsLoading, setOfferingsLoading] = useState(isNative);
+
+  useEffect(() => {
+    if (!isNative) return;
+    getOfferings().then(o => {
+      setOffering(o);
+      setOfferingsLoading(false);
+    });
+  }, []);
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  // Build a map of packageType → RC package from the current offering
+  function getRcPackageMap(): Record<string, any> {
+    const map: Record<string, any> = {};
+    if (offering?.availablePackages) {
+      for (const pkg of offering.availablePackages) {
+        map[pkg.packageType] = pkg;
+      }
+    }
+    return map;
+  }
+
+  function getRcPackage(plan: typeof PLANS[number]): any | null {
+    return getRcPackageMap()[plan.rcType] ?? null;
+  }
+
+  // Returns the localised price string from RevenueCat if available,
+  // otherwise falls back to the static fallback.
+  function displayPrice(plan: typeof PLANS[number]): string {
+    const pkg = getRcPackage(plan);
+    return pkg?.product?.priceString ?? plan.price;
+  }
+
+  // Returns the intro/trial note. If RevenueCat has intro pricing info, use it.
+  function displayTrialNote(plan: typeof PLANS[number]): string {
+    const pkg = getRcPackage(plan);
+    const intro = pkg?.product?.introPrice;
+    if (intro && intro.price === 0) {
+      const unit = intro.periodUnit?.toLowerCase() ?? 'day';
+      const count = intro.periodNumberOfUnits ?? 3;
+      return `${count} ${unit}${count !== 1 ? 's' : ''} free, then ${pkg.product.priceString}${plan.period}`;
+    }
+    return plan.trialNote;
+  }
+
+  // ── Purchase flow ─────────────────────────────────────────────────────────
+
+  async function handleNativePurchase() {
+    const plan = PLANS.find(p => p.key === selectedPlan)!;
+    const pkg = getRcPackage(plan);
+    if (!pkg) {
+      Alert.alert('Not available', 'This plan is not available right now. Please try again later.');
+      return;
+    }
+
     setLoading(true);
     try {
-      await api.post('/users/me/start-trial');
+      await rcPurchase(pkg);
+      // Sync backend so server-side limits (AI messages, etc.) are enforced
+      await api.post('/users/me/upgrade', { plan: selectedPlan }).catch(() => {});
       await refreshUser();
       Alert.alert(
-        'Trial started! 🎉',
-        'Your 3-day free trial has begun. Enjoy full access to Bravely Path.',
-        [{ text: 'Great!', onPress: () => router.back() }]
+        'Welcome to Premium! ⭐',
+        `You're now on the ${selectedPlan} plan. Enjoy unlimited access!`,
+        [{ text: "Let's go!", onPress: () => router.back() }]
       );
     } catch (err: any) {
-      const msg = err.response?.data?.error || 'Could not start trial.';
-      Alert.alert('Error', msg);
+      if (!isCancelledError(err)) {
+        Alert.alert('Purchase failed', err?.message ?? 'Something went wrong. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleUpgrade() {
+  // Web / no-RC fallback — uses the backend trial/upgrade endpoints
+  async function handleWebFallback() {
     setLoading(true);
     try {
-      await api.post('/users/me/upgrade', { plan: selectedPlan });
-      await refreshUser();
-      Alert.alert(
-        'Welcome to Premium! ⭐',
-        `You're now on the ${selectedPlan} plan. Enjoy unlimited access!`,
-        [{ text: 'Let\'s go!', onPress: () => router.back() }]
-      );
+      if (!isPremium) {
+        await api.post('/users/me/start-trial');
+        await refreshUser();
+        Alert.alert(
+          'Trial started! 🎉',
+          'Your 3-day free trial has begun. Enjoy full access to Bravely Path.',
+          [{ text: 'Great!', onPress: () => router.back() }]
+        );
+      } else {
+        await api.post('/users/me/upgrade', { plan: selectedPlan });
+        await refreshUser();
+        Alert.alert(
+          'Welcome to Premium! ⭐',
+          `You're now on the ${selectedPlan} plan.`,
+          [{ text: "Let's go!", onPress: () => router.back() }]
+        );
+      }
     } catch (err: any) {
-      Alert.alert('Error', err.response?.data?.error || 'Upgrade failed.');
+      Alert.alert('Error', err?.response?.data?.error ?? 'Could not complete purchase.');
     } finally {
       setLoading(false);
     }
   }
+
+  async function handleRestore() {
+    setLoading(true);
+    try {
+      await rcRestore();
+      await refreshUser();
+      Alert.alert('Restored', 'Your purchases have been restored.');
+    } catch (err: any) {
+      Alert.alert('Error', err?.message ?? 'Could not restore purchases.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleCta() {
+    if (isNative && offering) {
+      handleNativePurchase();
+    } else {
+      handleWebFallback();
+    }
+  }
+
+  // ── CTA label ─────────────────────────────────────────────────────────────
+
+  function ctaLabel(): string {
+    if (isPremium) return `Switch to ${selectedPlan} plan`;
+    if (isNative && offering) {
+      const plan = PLANS.find(p => p.key === selectedPlan)!;
+      const pkg = getRcPackage(plan);
+      const hasIntro = pkg?.product?.introPrice?.price === 0;
+      return hasIntro ? 'Start free trial' : `Subscribe — ${displayPrice(plan)}${plan.period}`;
+    }
+    return 'Start 3-day free trial';
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -117,57 +233,58 @@ export default function PaywallScreen() {
 
         {/* Plan selector */}
         <Text style={styles.sectionTitle}>Choose your plan</Text>
-        {PLANS.map(plan => (
-          <TouchableOpacity
-            key={plan.key}
-            style={[styles.planRow, selectedPlan === plan.key && styles.planRowSelected]}
-            onPress={() => setSelectedPlan(plan.key)}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.radio, selectedPlan === plan.key && styles.radioSelected]}>
-              {selectedPlan === plan.key && <View style={styles.radioDot} />}
-            </View>
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <View style={styles.planTitleRow}>
-                <Text style={styles.planName}>{plan.label}</Text>
-                {plan.badge && (
-                  <View style={[styles.planBadge, plan.key === 'monthly' ? styles.badgePopular : styles.badgeSave]}>
-                    <Text style={styles.planBadgeText}>{plan.badge}</Text>
-                  </View>
-                )}
-              </View>
-              <Text style={styles.planNote}>{plan.trialNote}</Text>
-            </View>
-            <Text style={styles.planPrice}>{plan.price}<Text style={styles.planPeriod}>{plan.period}</Text></Text>
-          </TouchableOpacity>
-        ))}
-
-        {/* CTA */}
-        {!isPremium ? (
-          <TouchableOpacity
-            style={[styles.ctaBtn, loading && styles.ctaBtnDisabled]}
-            onPress={handleStartTrial}
-            disabled={loading}
-          >
-            {loading
-              ? <ActivityIndicator color="#fff" />
-              : <Text style={styles.ctaBtnText}>Start 3-day free trial</Text>}
-          </TouchableOpacity>
+        {offeringsLoading ? (
+          <ActivityIndicator color={COLORS.primary} style={{ marginVertical: 24 }} />
         ) : (
-          <TouchableOpacity
-            style={[styles.ctaBtn, loading && styles.ctaBtnDisabled]}
-            onPress={handleUpgrade}
-            disabled={loading}
-          >
-            {loading
-              ? <ActivityIndicator color="#fff" />
-              : <Text style={styles.ctaBtnText}>Switch to {selectedPlan} plan</Text>}
-          </TouchableOpacity>
+          PLANS.map(plan => (
+            <TouchableOpacity
+              key={plan.key}
+              style={[styles.planRow, selectedPlan === plan.key && styles.planRowSelected]}
+              onPress={() => setSelectedPlan(plan.key)}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.radio, selectedPlan === plan.key && styles.radioSelected]}>
+                {selectedPlan === plan.key && <View style={styles.radioDot} />}
+              </View>
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <View style={styles.planTitleRow}>
+                  <Text style={styles.planName}>{plan.label}</Text>
+                  {plan.badge && (
+                    <View style={[styles.planBadge, plan.key === 'monthly' ? styles.badgePopular : styles.badgeSave]}>
+                      <Text style={styles.planBadgeText}>{plan.badge}</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.planNote}>{displayTrialNote(plan)}</Text>
+              </View>
+              <Text style={styles.planPrice}>
+                {displayPrice(plan)}<Text style={styles.planPeriod}>{plan.period}</Text>
+              </Text>
+            </TouchableOpacity>
+          ))
         )}
 
-        <TouchableOpacity style={styles.restoreBtn}>
-          <Text style={styles.restoreText}>Already subscribed? Restore purchase</Text>
+        {/* CTA */}
+        <TouchableOpacity
+          style={[styles.ctaBtn, (loading || offeringsLoading) && styles.ctaBtnDisabled]}
+          onPress={handleCta}
+          disabled={loading || offeringsLoading}
+        >
+          {loading
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={styles.ctaBtnText}>{ctaLabel()}</Text>}
         </TouchableOpacity>
+
+        {isNative && (
+          <TouchableOpacity style={styles.restoreBtn} onPress={handleRestore} disabled={loading}>
+            <Text style={styles.restoreText}>Already subscribed? Restore purchase</Text>
+          </TouchableOpacity>
+        )}
+        {!isNative && (
+          <TouchableOpacity style={styles.restoreBtn}>
+            <Text style={styles.restoreText}>Already subscribed? Restore purchase</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { PremiumProvider } from '../src/context/PremiumContext';
 import { registerPushToken, markActive, scheduleLocalNotification, cancelAllScheduled } from '../src/services/notifications';
+import { configurePurchases } from '../src/services/purchases';
 
 function RootLayoutNav() {
   const { user, isLoading } = useAuth();
@@ -13,6 +14,7 @@ function RootLayoutNav() {
 
   useEffect(() => {
     if (!isLoading && user) {
+      configurePurchases(user.id);
       registerPushToken();
       markActive();
       // Schedule a local reminder 24h from now; cancel any stale one first
