@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import api from '../../src/services/api';
 import { COLORS, ADDICTIONS } from '../../src/constants';
 
@@ -31,6 +32,7 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 export default function TrackersScreen() {
+  const { t } = useTranslation();
   const [trackers, setTrackers]   = useState<Tracker[]>([]);
   const [loading, setLoading]     = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -61,7 +63,7 @@ export default function TrackersScreen() {
       setCustomName('');
       setCategory('smoking');
     } catch (err: any) {
-      Alert.alert('Error', err.response?.data?.error || 'Could not create tracker.');
+      Alert.alert('Error', err.response?.data?.error || t('trackers.couldNotCreate'));
     } finally {
       setSaving(false);
     }
@@ -72,19 +74,19 @@ export default function TrackersScreen() {
       const { data } = await api.patch(`/trackers/${tracker.id}`, {
         isPaused: !tracker.isPaused,
       });
-      setTrackers(prev => prev.map(t => t.id === data.id ? data : t));
+      setTrackers(prev => prev.map(tr => tr.id === data.id ? data : tr));
     } catch {}
   }
 
   async function archiveTracker(id: string) {
-    Alert.alert('Remove tracker', 'Archive this tracker?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('trackers.removeTitle'), t('trackers.archiveMsg'), [
+      { text: t('sos.cancel'), style: 'cancel' },
       {
-        text: 'Archive', style: 'destructive',
+        text: t('trackers.archive'), style: 'destructive',
         onPress: async () => {
           try {
             await api.delete(`/trackers/${id}`);
-            setTrackers(prev => prev.filter(t => t.id !== id));
+            setTrackers(prev => prev.filter(tr => tr.id !== id));
           } catch {}
         },
       },
@@ -94,7 +96,7 @@ export default function TrackersScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <Text style={styles.title}>My Trackers</Text>
+        <Text style={styles.title}>{t('trackers.title')}</Text>
         <TouchableOpacity style={styles.addBtn} onPress={() => setModalVisible(true)}>
           <Ionicons name="add" size={22} color="#fff" />
         </TouchableOpacity>
@@ -105,36 +107,38 @@ export default function TrackersScreen() {
       ) : trackers.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyIcon}>📊</Text>
-          <Text style={styles.emptyTitle}>No trackers yet</Text>
-          <Text style={styles.emptyText}>Add your first addiction tracker to start counting your sober days.</Text>
+          <Text style={styles.emptyTitle}>{t('trackers.noTrackers')}</Text>
+          <Text style={styles.emptyText}>{t('trackers.noTrackersDesc')}</Text>
           <TouchableOpacity style={styles.emptyBtn} onPress={() => setModalVisible(true)}>
-            <Text style={styles.emptyBtnText}>Add tracker</Text>
+            <Text style={styles.emptyBtnText}>{t('trackers.addTracker')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.list}>
-          {trackers.map(t => (
-            <View key={t.id} style={[styles.card, t.isPaused && styles.cardPaused]}>
+          {trackers.map(tr => (
+            <View key={tr.id} style={[styles.card, tr.isPaused && styles.cardPaused]}>
               <View style={styles.cardLeft}>
-                <Text style={styles.cardIcon}>{CATEGORY_ICONS[t.category] ?? '🔷'}</Text>
+                <Text style={styles.cardIcon}>{CATEGORY_ICONS[tr.category] ?? '🔷'}</Text>
                 <View style={styles.cardInfo}>
-                  <Text style={styles.cardName}>{t.name || ADDICTIONS.find(a => a.value === t.category)?.label || t.category}</Text>
-                  {t.isPaused && <Text style={styles.pausedBadge}>Paused</Text>}
+                  <Text style={styles.cardName}>
+                    {tr.name || t('addictions.' + tr.category, ADDICTIONS.find(a => a.value === tr.category)?.label ?? tr.category)}
+                  </Text>
+                  {tr.isPaused && <Text style={styles.pausedBadge}>{t('trackers.paused')}</Text>}
                 </View>
               </View>
               <View style={styles.cardRight}>
-                <Text style={styles.daysNumber}>{t.daysSober}</Text>
-                <Text style={styles.daysLabel}>days</Text>
+                <Text style={styles.daysNumber}>{tr.daysSober}</Text>
+                <Text style={styles.daysLabel}>{t('trackers.days')}</Text>
               </View>
               <View style={styles.cardActions}>
-                <TouchableOpacity onPress={() => togglePause(t)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <TouchableOpacity onPress={() => togglePause(tr)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                   <Ionicons
-                    name={t.isPaused ? 'play-circle-outline' : 'pause-circle-outline'}
+                    name={tr.isPaused ? 'play-circle-outline' : 'pause-circle-outline'}
                     size={22}
                     color={COLORS.textMuted}
                   />
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => archiveTracker(t.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <TouchableOpacity onPress={() => archiveTracker(tr.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                   <Ionicons name="archive-outline" size={22} color={COLORS.textMuted} />
                 </TouchableOpacity>
               </View>
@@ -153,9 +157,9 @@ export default function TrackersScreen() {
         <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setModalVisible(false)}>
           <TouchableOpacity activeOpacity={1} onPress={() => {}}>
             <View style={styles.sheet}>
-              <Text style={styles.sheetTitle}>Add tracker</Text>
+              <Text style={styles.sheetTitle}>{t('trackers.sheetTitle')}</Text>
 
-              <Text style={styles.sheetLabel}>Category</Text>
+              <Text style={styles.sheetLabel}>{t('trackers.category')}</Text>
               <View style={styles.chipWrap}>
                 {ADDICTIONS.map(a => (
                   <TouchableOpacity
@@ -164,18 +168,18 @@ export default function TrackersScreen() {
                     onPress={() => setCategory(a.value)}
                   >
                     <Text style={[styles.chipText, category === a.value && styles.chipTextActive]}>
-                      {CATEGORY_ICONS[a.value]} {a.label}
+                      {CATEGORY_ICONS[a.value]} {t('addictions.' + a.value, a.label)}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
 
-              <Text style={styles.sheetLabel}>Custom name (optional)</Text>
+              <Text style={styles.sheetLabel}>{t('trackers.customName')}</Text>
               <TextInput
                 style={styles.input}
                 value={customName}
                 onChangeText={setCustomName}
-                placeholder="e.g. Morning cigarettes"
+                placeholder={t('trackers.customNamePlaceholder')}
                 placeholderTextColor={COLORS.textMuted}
                 maxLength={80}
               />
@@ -183,7 +187,7 @@ export default function TrackersScreen() {
               <TouchableOpacity style={styles.saveBtn} onPress={addTracker} disabled={saving}>
                 {saving
                   ? <ActivityIndicator color="#fff" />
-                  : <Text style={styles.saveBtnText}>Start tracking today</Text>
+                  : <Text style={styles.saveBtnText}>{t('trackers.startTracking')}</Text>
                 }
               </TouchableOpacity>
             </View>

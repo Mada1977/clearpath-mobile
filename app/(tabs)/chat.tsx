@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import * as secureStorage from '../../src/services/secureStorage';
 import * as Speech from 'expo-speech';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -16,8 +17,6 @@ import { COLORS, API_BASE_URL } from '../../src/constants';
 import { openHelpline } from '../../src/constants/helplines';
 import { UpgradePrompt } from '../../src/components/UpgradePrompt';
 
-// expo-speech-recognition requires a custom native build.
-// Skip require() in Expo Go and on web — native module is not registered in either.
 const IS_EXPO_GO = Constants.appOwnership === 'expo';
 const IS_WEB = Platform.OS === 'web';
 let SpeechModule: any = null;
@@ -37,6 +36,7 @@ type Message = { id: string; role: 'user' | 'assistant'; content: string; fromVo
 export default function ChatScreen() {
   const { user, refreshUser } = useAuth();
   const { isPremium, messagesUsedToday } = usePremium();
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
@@ -51,7 +51,6 @@ export default function ChatScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const speakerAnim = useRef(new Animated.Value(1)).current;
   const pendingVoiceRef = useRef<string | null>(null);
-  // Ref so the speech 'end' closure always calls the latest sendMessageText
   const sendVoiceRef = useRef<(text: string) => void>(() => {});
 
   useEffect(() => {
@@ -62,10 +61,8 @@ export default function ChatScreen() {
     return () => { Speech.stop(); };
   }, []);
 
-  // Keep the voice-send ref up to date every render
   sendVoiceRef.current = (text: string) => sendMessageText(text, true);
 
-  // Subscribe to speech events once on mount — uses refs so no stale closures
   useEffect(() => {
     if (!SpeechModule) return;
     const subs: any[] = [
@@ -91,9 +88,8 @@ export default function ChatScreen() {
       }),
     ];
     return () => subs.forEach(s => s?.remove?.());
-  }, []); // intentionally empty — uses refs
+  }, []);
 
-  // Pulse animation while recording
   useEffect(() => {
     if (isRecording) {
       Animated.loop(
@@ -108,7 +104,6 @@ export default function ChatScreen() {
     }
   }, [isRecording]);
 
-  // Speaker wave animation
   useEffect(() => {
     if (speakingMsgId) {
       Animated.loop(
@@ -141,11 +136,10 @@ export default function ChatScreen() {
   }
 
   async function handleMicPress() {
-    // Native module not loaded — graceful degradation for Expo Go
     if (!VOICE_AVAILABLE) {
       Alert.alert(
-        'Voice input unavailable',
-        'Voice input is available in the full app build (App Store / Google Play), not in Expo Go.',
+        t('chat.voiceUnavailableTitle'),
+        t('chat.voiceUnavailableMsg'),
         [{ text: 'OK' }]
       );
       return;
@@ -253,21 +247,32 @@ export default function ChatScreen() {
 
       xhr.onerror = () => {
         setMessages(prev => prev.map(m =>
-          m.id === assistantId ? { ...m, content: 'Connection error. Please try again.' } : m
+          m.id === assistantId ? { ...m, content: t('chat.connectionError') } : m
         ));
         setStreaming(false);
         resolve();
       };
 
-      xhr.send(JSON.stringify({ message: text }));
+      xhr.send(JSON.stringify({ message: text, locale: user?.locale ?? 'en-US' }));
     });
+  }
+
+  const TTS_LOCALE: Record<string, string> = {
+    fr: 'fr-FR', ar: 'ar-SA', es: 'es-ES', ro: 'ro-RO',
+    de: 'de-DE', it: 'it-IT', pt: 'pt-PT', nl: 'nl-NL',
+    pl: 'pl-PL', tr: 'tr-TR', en: 'en-US',
+  };
+  function getTtsLocale(locale?: string): string {
+    const code = (locale ?? 'en').split('-')[0].toLowerCase();
+    return TTS_LOCALE[code] ?? 'en-US';
   }
 
   function speakMessage(text: string, msgId: string) {
     Speech.stop();
     setSpeakingMsgId(msgId);
     Speech.speak(text.replace(/\*\*/g, ''), {
-      language: user?.locale ?? 'en-US',
+      language: getTtsLocale(user?.locale),
+      rate: 0.9,
       onDone: () => setSpeakingMsgId(null),
       onStopped: () => setSpeakingMsgId(null),
       onError: () => setSpeakingMsgId(null),
@@ -284,16 +289,16 @@ export default function ChatScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>AI Coach</Text>
-        <Text style={styles.headerSub}>Powered by Claude</Text>
+        <Text style={styles.headerTitle}>{t('chat.title')}</Text>
+        <Text style={styles.headerSub}>{t('chat.poweredBy')}</Text>
       </View>
 
       {!isPremium && messagesUsedToday > 0 && (
         <TouchableOpacity style={styles.limitBanner} onPress={() => setShowUpgrade(true)} activeOpacity={0.8}>
           <Text style={styles.limitBannerText}>
             {remainingMessages > 0
-              ? `${remainingMessages} free message${remainingMessages !== 1 ? 's' : ''} left today`
-              : 'Daily limit reached — tap to upgrade'}
+              ? t('chat.messagesLeft', { count: remainingMessages })
+              : t('chat.dailyLimit')}
           </Text>
           <Ionicons name="chevron-forward" size={14} color={remainingMessages > 0 ? COLORS.textMuted : COLORS.danger} />
         </TouchableOpacity>
@@ -303,11 +308,9 @@ export default function ChatScreen() {
         <View style={styles.crisisBox}>
           <View style={styles.crisisHeader}>
             <Ionicons name="alert-circle" size={16} color={COLORS.danger} />
-            <Text style={styles.crisisTitle}>If you need immediate help:</Text>
+            <Text style={styles.crisisTitle}>{t('chat.immediateHelp')}</Text>
           </View>
-          <Text style={styles.crisisNote}>
-            Not sure which number to call? Dial 112 — works in 190+ countries.
-          </Text>
+          <Text style={styles.crisisNote}>{t('chat.dial112')}</Text>
           {crisis.helplines?.map((h: any, i: number) => (
             <TouchableOpacity
               key={i}
@@ -365,7 +368,7 @@ export default function ChatScreen() {
                 {item.fromVoice && item.role === 'user' && (
                   <View style={styles.voiceTag}>
                     <Ionicons name="mic" size={10} color={COLORS.primary} />
-                    <Text style={styles.voiceTagText}>voice</Text>
+                    <Text style={styles.voiceTagText}>{t('chat.voice')}</Text>
                   </View>
                 )}
                 {item.role === 'user' ? (
@@ -385,7 +388,7 @@ export default function ChatScreen() {
             style={styles.input}
             value={input}
             onChangeText={setInput}
-            placeholder={isRecording ? 'Listening...' : 'How are you feeling?'}
+            placeholder={isRecording ? t('chat.listening') : t('chat.placeholder')}
             placeholderTextColor={isRecording ? COLORS.danger : COLORS.textMuted}
             multiline
             onSubmitEditing={sendMessage}

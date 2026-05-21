@@ -8,9 +8,9 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const PLANS = [
-  { key: 'weekly',  price: '€3.99', period: 'week',  label: 'Weekly',  badge: null },
-  { key: 'monthly', price: '€9.99', period: 'month', label: 'Monthly', badge: 'Most popular' },
-  { key: 'yearly',  price: '€59.99',period: 'year',  label: 'Yearly',  badge: 'Save 50%' },
+  { key: 'weekly',  price: '€8.99',  period: 'week',  label: 'Weekly',  badge: null },
+  { key: 'monthly', price: '€12.99', period: 'month', label: 'Monthly', badge: 'Most popular' },
+  { key: 'yearly',  price: '€69.99', period: 'year',  label: 'Yearly',  badge: 'Save 55%' },
 ];
 
 const CRISIS_KEYWORDS = ['help', 'crisis', 'relapse', 'suicide', 'emergency', 'overdose'];
@@ -38,7 +38,7 @@ export function UpgradePrompt({ visible, onClose, triggerMessage = '' }: Props) 
       await api.post('/users/me/start-trial');
       await refreshUser();
       onClose();
-      Alert.alert('Trial started!', 'Your 7-day free trial has begun. Enjoy unlimited access!');
+      Alert.alert('Trial started!', 'Your 3-day free trial has begun. Enjoy unlimited access!');
     } catch (err: any) {
       const msg = err.response?.data?.error || 'Could not start trial.';
       Alert.alert('Error', msg);
@@ -79,7 +79,7 @@ export function UpgradePrompt({ visible, onClose, triggerMessage = '' }: Props) 
                   {plan.price}
                 </Text>
                 <Text style={styles.planPeriod}>/{plan.period}</Text>
-                <Text style={styles.planTrial}>7-day free trial</Text>
+                <Text style={styles.planTrial}>3-day free trial</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -91,7 +91,7 @@ export function UpgradePrompt({ visible, onClose, triggerMessage = '' }: Props) 
           >
             {loading
               ? <ActivityIndicator color="#fff" />
-              : <Text style={styles.ctaBtnText}>Start 7-day free trial</Text>}
+              : <Text style={styles.ctaBtnText}>Start 3-day free trial</Text>}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={onClose} style={styles.laterBtn}>

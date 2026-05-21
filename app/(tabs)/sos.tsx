@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/context/AuthContext';
 import api from '../../src/services/api';
 import { COLORS, ADDICTIONS } from '../../src/constants';
@@ -14,11 +15,12 @@ import { useOffline } from '../../src/hooks/useOffline';
 import { getCachedCopingTips } from '../../src/services/offlineCache';
 import { pauseMusic, getMusicEnabled, playMusic } from '../../src/services/audioPlayer';
 
-const TIMER_SECONDS = 5 * 60; // 5 minutes
+const TIMER_SECONDS = 5 * 60;
 
 export default function SosScreen() {
   const { user } = useAuth();
   const { isOffline } = useOffline();
+  const { t } = useTranslation();
   const [active, setActive]       = useState(false);
   const [seconds, setSeconds]     = useState(TIMER_SECONDS);
   const [steps, setSteps]         = useState<string[]>([]);
@@ -35,9 +37,7 @@ export default function SosScreen() {
 
   const minutesLeft = Math.floor(seconds / 60);
   const secsLeft    = seconds % 60;
-  const progress    = (TIMER_SECONDS - seconds) / TIMER_SECONDS;
 
-  // Pause music when SOS screen is focused, resume when leaving
   useFocusEffect(useCallback(() => {
     pauseMusic();
     return () => {
@@ -111,13 +111,11 @@ export default function SosScreen() {
       });
       setLogged(true);
       Alert.alert(
-        outcome === 'resisted' ? '💪 Well done!' : '🤗 It\'s okay',
-        outcome === 'resisted'
-          ? 'You resisted! Every moment of strength matters.'
-          : 'Every setback is a setup for a comeback. Tomorrow is a new day.'
+        outcome === 'resisted' ? t('sos.wellDone') : t('sos.itsOkay'),
+        outcome === 'resisted' ? t('sos.wellDoneMsg') : t('sos.itsOkayMsg')
       );
     } catch {
-      Alert.alert('Error', 'Could not save log.');
+      Alert.alert('Error', t('sos.couldNotSave'));
     }
   }
 
@@ -129,13 +127,13 @@ export default function SosScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Craving SOS</Text>
-        <Text style={styles.sub}>Cravings last 5 minutes. You can do this.</Text>
+        <Text style={styles.title}>{t('sos.title')}</Text>
+        <Text style={styles.sub}>{t('sos.sub')}</Text>
 
         {/* Addiction selector */}
         <View style={styles.chipWrap}>
           {userAddictions.map(a => {
-            const label = ADDICTIONS.find(x => x.value === a)?.label ?? a;
+            const label = t(`addictions.${a}`, ADDICTIONS.find(x => x.value === a)?.label ?? a);
             return (
               <TouchableOpacity
                 key={a}
@@ -160,17 +158,17 @@ export default function SosScreen() {
             <Text style={[styles.timerText, active && { color: COLORS.primary }]}>
               {String(minutesLeft).padStart(2, '0')}:{String(secsLeft).padStart(2, '0')}
             </Text>
-            <Text style={styles.timerLabel}>{active ? 'Stay strong' : '5:00'}</Text>
+            <Text style={styles.timerLabel}>{active ? t('sos.stayStrong') : '5:00'}</Text>
           </View>
 
           {!active ? (
             <TouchableOpacity style={styles.startBtn} onPress={startSos}>
               <Ionicons name="flash" size={22} color="#fff" />
-              <Text style={styles.startBtnText}>I'm having a craving</Text>
+              <Text style={styles.startBtnText}>{t('sos.havingACraving')}</Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={styles.resetBtn} onPress={reset}>
-              <Text style={styles.resetBtnText}>Cancel</Text>
+              <Text style={styles.resetBtnText}>{t('sos.cancel')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -178,7 +176,7 @@ export default function SosScreen() {
         {/* SOS steps */}
         {active && (
           <View style={styles.stepsBox}>
-            <Text style={styles.stepsTitle}>Your SOS steps</Text>
+            <Text style={styles.stepsTitle}>{t('sos.sosSteps')}</Text>
             {loadingSteps ? (
               <ActivityIndicator color={COLORS.primary} style={{ marginTop: 12 }} />
             ) : steps.length > 0 ? (
@@ -191,9 +189,7 @@ export default function SosScreen() {
                 </View>
               ))
             ) : (
-              <Text style={styles.noSteps}>
-                Take slow deep breaths. Focus on what is in front of you right now.
-              </Text>
+              <Text style={styles.noSteps}>{t('sos.breathe')}</Text>
             )}
           </View>
         )}
@@ -205,13 +201,13 @@ export default function SosScreen() {
               style={[styles.outcomeBtn, styles.outcomeBtnResist]}
               onPress={() => logCraving('resisted')}
             >
-              <Text style={styles.outcomeBtnText}>💪 I resisted</Text>
+              <Text style={styles.outcomeBtnText}>{t('sos.iResisted')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.outcomeBtn, styles.outcomeBtnSlip]}
               onPress={() => logCraving('gave_in')}
             >
-              <Text style={[styles.outcomeBtnText, { color: COLORS.textMuted }]}>I slipped</Text>
+              <Text style={[styles.outcomeBtnText, { color: COLORS.textMuted }]}>{t('sos.iSlipped')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -219,11 +215,10 @@ export default function SosScreen() {
         {logged && (
           <View style={styles.loggedBadge}>
             <Ionicons name="checkmark-circle" size={20} color={COLORS.secondary} />
-            <Text style={styles.loggedText}>Logged</Text>
+            <Text style={styles.loggedText}>{t('sos.logged')}</Text>
           </View>
         )}
 
-        {/* Crisis helplines — always visible */}
         <HelplineSection locale={user?.locale ?? 'en-US'} />
       </ScrollView>
     </SafeAreaView>
@@ -231,17 +226,15 @@ export default function SosScreen() {
 }
 
 function HelplineSection({ locale }: { locale: string }) {
+  const { t } = useTranslation();
   const helplines = getHelplinesByLocale(locale);
   return (
     <View style={styles.helpCard}>
       <View style={styles.helpHeader}>
         <Ionicons name="call" size={18} color={COLORS.danger} />
-        <Text style={styles.helpTitle}>Emergency &amp; Crisis Contacts</Text>
+        <Text style={styles.helpTitle}>{t('sos.emergency')}</Text>
       </View>
-      <Text style={styles.helpNote}>
-        Not sure which number to call?{'\n'}
-        Dial 112 — works in most countries and connects you to local emergency services.
-      </Text>
+      <Text style={styles.helpNote}>{t('sos.dial112Note')}</Text>
       {helplines.map((h, i) => (
         <HelplineRow key={i} h={h} />
       ))}

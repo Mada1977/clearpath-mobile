@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/context/AuthContext';
 import { usePremium } from '../../src/context/PremiumContext';
 import api from '../../src/services/api';
@@ -30,6 +31,7 @@ export default function ProfileScreen() {
   const { user, logout, refreshUser } = useAuth();
   const { currentLanguage, setLanguage } = useLanguage();
   const { isPremium, isOnTrial, trialDaysLeft } = usePremium();
+  const { t } = useTranslation();
   const router = useRouter();
 
   const [saving, setSaving] = useState(false);
@@ -107,27 +109,27 @@ export default function ProfileScreen() {
       setInviteEmail('');
       await loadSupporters();
       Share.share({
-        message: `I'd like to share my recovery progress with you on Bravely Path. Use this invite code to follow my journey: ${code}`,
-        title: 'Bravely Path — Supporter Invite',
+        message: t('profile.inviteMsg', { code }),
+        title: t('profile.inviteShareTitle'),
       });
     } catch (err: any) {
-      Alert.alert('Error', err.response?.data?.error || 'Could not create invite.');
+      Alert.alert('Error', err.response?.data?.error || t('profile.couldNotInvite'));
     } finally {
       setInviting(false);
     }
   }
 
   async function revokeSupporter(id: string, email: string) {
-    Alert.alert('Revoke access', `Remove ${email} as your supporter?`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('profile.revokeTitle'), t('profile.revokeMsg', { email }), [
+      { text: t('sos.cancel') ?? 'Cancel', style: 'cancel' },
       {
-        text: 'Revoke', style: 'destructive',
+        text: t('profile.revoke'), style: 'destructive',
         onPress: async () => {
           try {
             await api.delete(`/supporters/${id}`);
             await loadSupporters();
           } catch (err: any) {
-            Alert.alert('Error', err.response?.data?.error || 'Could not revoke.');
+            Alert.alert('Error', err.response?.data?.error || t('profile.couldNotRevoke'));
           }
         },
       },
@@ -136,8 +138,8 @@ export default function ProfileScreen() {
 
   async function shareInviteCode(code: string) {
     Share.share({
-      message: `Use this code to follow my Bravely Path recovery journey: ${code}`,
-      title: 'Bravely Path — Supporter Invite',
+      message: t('profile.shareCodeMsg', { code }),
+      title: t('profile.inviteShareTitle'),
     });
   }
 
@@ -156,17 +158,17 @@ export default function ProfileScreen() {
     try {
       await api.patch('/users/me', { addictions: selectedAddictions, stage });
       await refreshUser();
-      Alert.alert('Saved', 'Your profile has been updated.');
+      Alert.alert(t('profile.saved'), t('profile.profileUpdated'));
     } catch (err: any) {
       const code = err.response?.data?.code;
       if (code === 'AGE_VERIFICATION_REQUIRED') {
         Alert.alert(
-          'Age verification required',
-          'You must confirm you are 18+ to add this content.',
+          t('profile.ageRequired'),
+          t('profile.ageRequiredMsg'),
           [
-            { text: 'Cancel', style: 'cancel' },
+            { text: t('sos.cancel') ?? 'Cancel', style: 'cancel' },
             {
-              text: 'I confirm I am 18+',
+              text: t('profile.ageConfirm'),
               onPress: async () => {
                 await api.post('/users/me/verify-age', { confirmed: true });
                 await api.patch('/users/me', { addictions: selectedAddictions, stage });
@@ -176,7 +178,7 @@ export default function ProfileScreen() {
           ]
         );
       } else {
-        Alert.alert('Error', err.response?.data?.error || 'Could not save profile.');
+        Alert.alert('Error', err.response?.data?.error || t('profile.couldNotSave'));
       }
     } finally {
       setSaving(false);
@@ -185,54 +187,54 @@ export default function ProfileScreen() {
 
   async function handleLogout() {
     if (Platform.OS === 'web') {
-      if (window.confirm('Are you sure you want to sign out?')) await logout();
+      if (window.confirm(t('profile.signOutMsg'))) await logout();
       return;
     }
-    Alert.alert('Sign out', 'Are you sure?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: logout },
+    Alert.alert(t('profile.signOutTitle'), t('profile.signOutMsg'), [
+      { text: t('sos.cancel') ?? 'Cancel', style: 'cancel' },
+      { text: t('profile.signOut'), style: 'destructive', onPress: logout },
     ]);
   }
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Profile</Text>
+        <Text style={styles.title}>{t('profile.title')}</Text>
 
         {/* Account card */}
         <View style={styles.card}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{(user?.name || user?.email || 'U')[0].toUpperCase()}</Text>
           </View>
-          <Text style={styles.name}>{user?.name || 'Anonymous'}</Text>
+          <Text style={styles.name}>{user?.name || t('profile.anonymous')}</Text>
           <Text style={styles.email}>{user?.email}</Text>
           {isPremium ? (
             <View style={styles.premiumBadge}>
               <Text style={styles.premiumText}>
-                {isOnTrial ? `⭐ Free Trial — ${trialDaysLeft} day${trialDaysLeft !== 1 ? 's' : ''} left` : '⭐ Premium'}
+                {isOnTrial ? t('profile.freeTrial', { count: trialDaysLeft }) : t('profile.premium')}
               </Text>
             </View>
           ) : (
             <TouchableOpacity style={styles.goPremiumBtn} onPress={() => router.push('/paywall')}>
               <Ionicons name="star-outline" size={14} color="#fff" />
-              <Text style={styles.goPremiumText}>Go Premium</Text>
+              <Text style={styles.goPremiumText}>{t('profile.goPremium')}</Text>
             </TouchableOpacity>
           )}
         </View>
 
         {/* Language selector */}
-        <Text style={styles.sectionLabel}>Language</Text>
+        <Text style={styles.sectionLabel}>{t('profile.language')}</Text>
         <TouchableOpacity style={styles.langRow} onPress={() => setLangModalVisible(true)} activeOpacity={0.7}>
           <Text style={styles.langFlag}>{currentLanguage.flag}</Text>
           <View style={styles.langLabels}>
             <Text style={styles.langName}>{currentLanguage.nativeLabel}</Text>
-            <Text style={styles.langSub}>{currentLanguage.label} · AI responds in this language</Text>
+            <Text style={styles.langSub}>{currentLanguage.label} · {t('profile.aiLanguage')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
         </TouchableOpacity>
 
         {/* Addictions */}
-        <Text style={styles.sectionLabel}>What are you working on?</Text>
+        <Text style={styles.sectionLabel}>{t('profile.workingOn')}</Text>
         <View style={styles.wrap}>
           {ADDICTIONS.map(a => (
             <TouchableOpacity
@@ -241,14 +243,14 @@ export default function ProfileScreen() {
               onPress={() => toggleAddiction(a.value)}
             >
               <Text style={[styles.chipText, selectedAddictions.includes(a.value) && styles.chipTextActive]}>
-                {a.label}
+                {t('addictions.' + a.value, a.label)}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Stage */}
-        <Text style={styles.sectionLabel}>Your current stage</Text>
+        <Text style={styles.sectionLabel}>{t('profile.currentStage')}</Text>
         <View style={styles.wrap}>
           {STAGES.map(s => (
             <TouchableOpacity
@@ -256,23 +258,23 @@ export default function ProfileScreen() {
               style={[styles.chip, stage === s.value && styles.chipActive]}
               onPress={() => setStage(s.value)}
             >
-              <Text style={[styles.chipText, stage === s.value && styles.chipTextActive]}>{s.label}</Text>
+              <Text style={[styles.chipText, stage === s.value && styles.chipTextActive]}>
+                {t('stages.' + s.value, s.label)}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Settings */}
-        <Text style={styles.sectionLabel}>Settings</Text>
+        <Text style={styles.sectionLabel}>{t('profile.settings')}</Text>
         <View style={styles.card}>
           <View style={styles.settingRow}>
             <View style={styles.settingLeft}>
               <Ionicons name="musical-notes-outline" size={20} color={COLORS.primary} />
               <View style={{ marginLeft: 12 }}>
-                <Text style={styles.settingLabel}>Background music</Text>
+                <Text style={styles.settingLabel}>{t('profile.backgroundMusic')}</Text>
                 <Text style={styles.settingSub}>
-                  {musicUnavailable
-                    ? 'Place background.mp3 in assets/sounds/ to enable'
-                    : 'Calming music while you use the app'}
+                  {musicUnavailable ? t('profile.musicUnavailableSub') : t('profile.musicSub')}
                 </Text>
               </View>
             </View>
@@ -285,17 +287,15 @@ export default function ProfileScreen() {
             />
           </View>
           {musicUnavailable && (
-            <Text style={styles.settingWarn}>
-              audio file missing — add assets/sounds/background.mp3 and rebuild
-            </Text>
+            <Text style={styles.settingWarn}>{t('profile.musicMissing')}</Text>
           )}
 
           <View style={[styles.settingRow, { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: COLORS.border }]}>
             <View style={styles.settingLeft}>
               <Ionicons name="volume-medium-outline" size={20} color={COLORS.primary} />
               <View style={{ marginLeft: 12 }}>
-                <Text style={styles.settingLabel}>Read responses aloud</Text>
-                <Text style={styles.settingSub}>AI Coach speaks the response after each message</Text>
+                <Text style={styles.settingLabel}>{t('profile.readAloud')}</Text>
+                <Text style={styles.settingSub}>{t('profile.readAloudSub')}</Text>
               </View>
             </View>
             <Switch
@@ -310,8 +310,8 @@ export default function ProfileScreen() {
             <View style={styles.settingLeft}>
               <Ionicons name="mail-outline" size={20} color={COLORS.primary} />
               <View style={{ marginLeft: 12 }}>
-                <Text style={styles.settingLabel}>Daily check-in email</Text>
-                <Text style={styles.settingSub}>Reminder at 9am to log your day</Text>
+                <Text style={styles.settingLabel}>{t('profile.dailyEmail')}</Text>
+                <Text style={styles.settingSub}>{t('profile.dailyEmailSub')}</Text>
               </View>
             </View>
             <Switch
@@ -324,18 +324,16 @@ export default function ProfileScreen() {
         </View>
 
         <TouchableOpacity style={styles.saveButton} onPress={saveProfile} disabled={saving}>
-          {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>Save changes</Text>}
+          {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveButtonText}>{t('profile.saveChanges')}</Text>}
         </TouchableOpacity>
 
         {/* Family & Supporters */}
-        <Text style={styles.sectionLabel}>Family & Supporters</Text>
+        <Text style={styles.sectionLabel}>{t('profile.familySupporters')}</Text>
         <View style={styles.card}>
-          <Text style={styles.supportersDesc}>
-            Invite a trusted family member or friend to see your progress. They'll see only what you choose to share.
-          </Text>
+          <Text style={styles.supportersDesc}>{t('profile.supportersDesc')}</Text>
           <TouchableOpacity style={styles.inviteBtn} onPress={() => setInviteModalVisible(true)}>
             <Ionicons name="person-add-outline" size={16} color={COLORS.primary} />
-            <Text style={styles.inviteBtnText}>Invite a supporter</Text>
+            <Text style={styles.inviteBtnText}>{t('profile.inviteSupporter')}</Text>
           </TouchableOpacity>
 
           {supporters.length > 0 && (
@@ -347,7 +345,7 @@ export default function ProfileScreen() {
                     <View style={{ flex: 1 }}>
                       <Text style={styles.supporterEmail}>{s.supporterEmail}</Text>
                       <Text style={styles.supporterStatus}>
-                        {s.status === 'active' ? 'Active' : 'Pending'} ·{' '}
+                        {s.status === 'active' ? t('profile.active') : t('profile.pending')} ·{' '}
                         {s.shareStreak ? 'Streak' : ''}{s.shareStreak && s.shareMood ? ' + ' : ''}{s.shareMood ? 'Mood' : ''}
                       </Text>
                     </View>
@@ -371,7 +369,7 @@ export default function ProfileScreen() {
         {/* Sign out */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={18} color={COLORS.danger} />
-          <Text style={styles.logoutText}>Sign out</Text>
+          <Text style={styles.logoutText}>{t('profile.signOut')}</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -379,12 +377,10 @@ export default function ProfileScreen() {
       <Modal visible={inviteModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modal}>
-            <Text style={styles.modalTitle}>Invite a supporter</Text>
-            <Text style={styles.modalDesc}>
-              They'll receive a code to view your progress in Bravely Path.
-            </Text>
+            <Text style={styles.modalTitle}>{t('profile.inviteTitle')}</Text>
+            <Text style={styles.modalDesc}>{t('profile.inviteDesc')}</Text>
 
-            <Text style={styles.inputLabel}>Supporter's email</Text>
+            <Text style={styles.inputLabel}>{t('profile.supporterEmail')}</Text>
             <TextInput
               style={styles.textInput}
               placeholder="their@email.com"
@@ -395,30 +391,30 @@ export default function ProfileScreen() {
               autoCapitalize="none"
             />
 
-            <Text style={styles.inputLabel}>What can they see?</Text>
+            <Text style={styles.inputLabel}>{t('profile.whatCanTheySee')}</Text>
             <TouchableOpacity style={styles.toggleRow} onPress={() => setShareStreak(v => !v)}>
               <View style={[styles.toggle, shareStreak && styles.toggleOn]}>
                 {shareStreak && <Ionicons name="checkmark" size={14} color="#fff" />}
               </View>
-              <Text style={styles.toggleLabel}>Sobriety streak (days sober)</Text>
+              <Text style={styles.toggleLabel}>{t('profile.sobrietyStreak')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.toggleRow} onPress={() => setShareMood(v => !v)}>
               <View style={[styles.toggle, shareMood && styles.toggleOn]}>
                 {shareMood && <Ionicons name="checkmark" size={14} color="#fff" />}
               </View>
-              <Text style={styles.toggleLabel}>Last reported mood</Text>
+              <Text style={styles.toggleLabel}>{t('profile.lastMood')}</Text>
             </TouchableOpacity>
 
             <View style={styles.modalBtns}>
               <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setInviteModalVisible(false)}>
-                <Text style={styles.modalCancelText}>Cancel</Text>
+                <Text style={styles.modalCancelText}>{t('sos.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalConfirmBtn, (!inviteEmail.trim() || inviting) && styles.modalBtnDisabled]}
                 onPress={sendInvite}
                 disabled={!inviteEmail.trim() || inviting}
               >
-                {inviting ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.modalConfirmText}>Send invite</Text>}
+                {inviting ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.modalConfirmText}>{t('profile.sendInvite')}</Text>}
               </TouchableOpacity>
             </View>
           </View>

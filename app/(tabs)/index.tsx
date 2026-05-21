@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/context/AuthContext';
 import api from '../../src/services/api';
 import { COLORS, ADDICTIONS } from '../../src/constants';
@@ -29,12 +30,13 @@ const TRACKER_ICONS: Record<string, string> = {
 export default function HomeScreen() {
   const { user } = useAuth();
   const { isOffline } = useOffline();
+  const { t } = useTranslation();
   const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [trackers, setTrackers]   = useState<TrackerSummary[]>([]);
   const [stability, setStability] = useState<StabilityData | null>(null);
-  // Refresh data every time this tab comes into focus (e.g. after logging)
+
   useFocusEffect(
     useCallback(() => {
       fetchStats();
@@ -43,7 +45,6 @@ export default function HomeScreen() {
     }, [])
   );
 
-  // Start music once on mount
   useEffect(() => {
     loadMusic().then(() => getMusicEnabled().then(on => { if (on) playMusic(); }));
   }, []);
@@ -88,15 +89,15 @@ export default function HomeScreen() {
   }
 
   const addictionLabels = (user?.addictions ?? [])
-    .map(a => ADDICTIONS.find(x => x.value === a)?.label)
+    .map(a => t(`addictions.${a}`, ADDICTIONS.find(x => x.value === a)?.label ?? a))
     .filter(Boolean)
-    .join(', ') || 'None set yet';
+    .join(', ') || t('home.noneSet');
 
   const greeting = () => {
     const h = new Date().getHours();
-    if (h < 12) return 'Good morning';
-    if (h < 18) return 'Good afternoon';
-    return 'Good evening';
+    if (h < 12) return t('home.goodMorning');
+    if (h < 18) return t('home.goodAfternoon');
+    return t('home.goodEvening');
   };
 
   return (
@@ -104,13 +105,13 @@ export default function HomeScreen() {
       {isOffline && (
         <View style={styles.offlineBanner}>
           <Ionicons name="cloud-offline-outline" size={14} color="#fff" />
-          <Text style={styles.offlineBannerText}>Offline mode — showing cached data</Text>
+          <Text style={styles.offlineBannerText}>{t('home.offline')}</Text>
         </View>
       )}
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.headerRow}>
-          <Text style={styles.greeting}>{greeting()}, {user?.name || 'friend'}</Text>
-          <Text style={styles.sub}>Keep going — every day counts.</Text>
+          <Text style={styles.greeting}>{greeting()}, {user?.name || t('home.friend')}</Text>
+          <Text style={styles.sub}>{t('home.keepGoing')}</Text>
         </View>
 
         {/* Streak card */}
@@ -121,14 +122,14 @@ export default function HomeScreen() {
           ) : (
             <>
               <Text style={styles.streakNumber}>{stats?.streak ?? 0}</Text>
-              <Text style={styles.streakLabel}>day streak</Text>
+              <Text style={styles.streakLabel}>{t('home.dayStreak')}</Text>
             </>
           )}
         </View>
 
         {stats?.streak === 0 && (
           <View style={styles.encourageBox}>
-            <Text style={styles.encourageText}>Every journey starts with day 1 — you've got this! 💪</Text>
+            <Text style={styles.encourageText}>{t('home.encouragement')}</Text>
           </View>
         )}
 
@@ -137,17 +138,17 @@ export default function HomeScreen() {
           <View style={[styles.statBox, { borderTopWidth: 3, borderTopColor: COLORS.secondary }]}>
             <Ionicons name="checkmark-circle-outline" size={20} color={COLORS.secondary} style={{ marginBottom: 4 }} />
             <Text style={[styles.statNumber, { color: COLORS.secondary }]}>{stats?.totalResisted ?? 0}</Text>
-            <Text style={styles.statLabel}>Resisted</Text>
+            <Text style={styles.statLabel}>{t('home.resisted')}</Text>
           </View>
           <View style={[styles.statBox, { borderTopWidth: 3, borderTopColor: COLORS.primary }]}>
             <Ionicons name="flash-outline" size={20} color={COLORS.primary} style={{ marginBottom: 4 }} />
             <Text style={[styles.statNumber, { color: COLORS.primary }]}>{stats?.totalSos ?? 0}</Text>
-            <Text style={styles.statLabel}>SOS used</Text>
+            <Text style={styles.statLabel}>{t('home.sosUsed')}</Text>
           </View>
           <View style={[styles.statBox, { borderTopWidth: 3, borderTopColor: '#F59E0B' }]}>
             <Ionicons name="alert-circle-outline" size={20} color="#F59E0B" style={{ marginBottom: 4 }} />
             <Text style={[styles.statNumber, { color: '#F59E0B' }]}>{stats?.totalUsed ?? 0}</Text>
-            <Text style={styles.statLabel}>Slips</Text>
+            <Text style={styles.statLabel}>{t('home.slips')}</Text>
           </View>
         </View>
 
@@ -159,12 +160,12 @@ export default function HomeScreen() {
         {/* Tracker summary */}
         {trackers.length > 0 ? (
           <TouchableOpacity style={[styles.card, { marginBottom: 16 }]} onPress={() => router.push('/(tabs)/trackers')} activeOpacity={0.8}>
-            <Text style={styles.cardTitle}>Active trackers</Text>
+            <Text style={styles.cardTitle}>{t('home.activeTrackers')}</Text>
             <View style={styles.trackerRow}>
-              {trackers.map(t => (
-                <View key={t.id} style={styles.trackerChip}>
-                  <Text style={styles.trackerIcon}>{TRACKER_ICONS[t.category] ?? '🔷'}</Text>
-                  <Text style={styles.trackerDays}>{t.daysSober}d</Text>
+              {trackers.map(t2 => (
+                <View key={t2.id} style={styles.trackerChip}>
+                  <Text style={styles.trackerIcon}>{TRACKER_ICONS[t2.category] ?? '🔷'}</Text>
+                  <Text style={styles.trackerDays}>{t2.daysSober}d</Text>
                 </View>
               ))}
             </View>
@@ -172,16 +173,16 @@ export default function HomeScreen() {
         ) : (
           <TouchableOpacity style={styles.emptyTrackerCard} onPress={() => router.push('/(tabs)/trackers')} activeOpacity={0.8}>
             <Ionicons name="add-circle-outline" size={26} color={COLORS.primary} />
-            <Text style={styles.emptyTrackerText}>Tap + to add your first tracker</Text>
+            <Text style={styles.emptyTrackerText}>{t('home.addFirstTracker')}</Text>
           </TouchableOpacity>
         )}
 
         {/* Profile summary */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>My recovery</Text>
-          <Row icon="warning-outline" label="Working on" value={addictionLabels} />
-          <Row icon="trending-up-outline" label="Stage" value={user?.stage ?? '—'} />
-          <Row icon="chatbubble-outline" label="Daily AI messages" value={`${user?.dailyGoal ?? 10} / day`} />
+          <Text style={styles.cardTitle}>{t('home.myRecovery')}</Text>
+          <Row icon="warning-outline" label={t('home.workingOn')} value={addictionLabels} />
+          <Row icon="trending-up-outline" label={t('home.stage')} value={user?.stage ? t(`stages.${user.stage}`, user.stage) : '—'} />
+          <Row icon="chatbubble-outline" label={t('home.dailyMessages')} value={`${user?.dailyGoal ?? 10} ${t('home.perDay')}`} />
         </View>
       </ScrollView>
     </SafeAreaView>

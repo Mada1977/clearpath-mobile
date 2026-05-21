@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/context/AuthContext';
 import api from '../../src/services/api';
 import { COLORS } from '../../src/constants';
@@ -26,21 +27,22 @@ type Stats = {
 };
 
 const MILESTONES = [
-  { days: 1,   icon: '🌱', label: '1 day'   },
-  { days: 3,   icon: '🔥', label: '3 days'  },
-  { days: 7,   icon: '⭐', label: '1 week'  },
-  { days: 14,  icon: '🏆', label: '2 weeks' },
-  { days: 30,  icon: '🥇', label: '1 month' },
-  { days: 90,  icon: '💎', label: '3 months'},
-  { days: 180, icon: '🚀', label: '6 months'},
-  { days: 365, icon: '👑', label: '1 year'  },
+  { days: 1,   icon: '🌱' },
+  { days: 3,   icon: '🔥' },
+  { days: 7,   icon: '⭐' },
+  { days: 14,  icon: '🏆' },
+  { days: 30,  icon: '🥇' },
+  { days: 90,  icon: '💎' },
+  { days: 180, icon: '🚀' },
+  { days: 365, icon: '👑' },
 ];
 
-const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DAY_KEYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default function ProgressScreen() {
   const { user } = useAuth();
   const { isOffline } = useOffline();
+  const { t } = useTranslation();
   const [stats, setStats]           = useState<Stats | null>(null);
   const [loading, setLoading]       = useState(true);
   const [logs, setLogs]             = useState<Log[]>([]);
@@ -93,14 +95,13 @@ export default function ProgressScreen() {
       const used = await AsyncStorage.getItem(FREE_PREVIEW_KEY);
       if (used) {
         Alert.alert(
-          'Premium feature',
-          'Therapist reports are a premium feature. Upgrade to generate unlimited reports.',
+          t('progress.premiumFeature'),
+          t('progress.premiumFeatureMsg'),
           [{ text: 'OK' }]
         );
         return;
       }
     }
-    // Pre-select logs that have notes
     const withNotes = logs.filter(l => l.notes).slice(0, 10).map(l => l.id);
     setSelectedLogIds(withNotes);
     setReportModal(true);
@@ -126,13 +127,12 @@ export default function ProgressScreen() {
         weekEnd: now.toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' }),
       });
 
-      // Mark free preview used if not premium
       if (!(user as any)?.isPremium) {
         await AsyncStorage.setItem(FREE_PREVIEW_KEY, '1');
       }
       setReportModal(false);
-    } catch (err: any) {
-      Alert.alert('Error', 'Could not generate report. Please try again.');
+    } catch {
+      Alert.alert('Error', t('progress.reportError'));
     } finally {
       setGenerating(false);
     }
@@ -156,11 +156,11 @@ export default function ProgressScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.titleRow}>
-          <Text style={styles.title}>Progress</Text>
+          <Text style={styles.title}>{t('progress.title')}</Text>
           <TouchableOpacity style={styles.reportBtn} onPress={openReportModal}>
             <Ionicons name="document-text-outline" size={15} color={COLORS.primary} />
             <Text style={styles.reportBtnText}>
-              {(user as any)?.isPremium ? 'Therapist report' : 'Report (1 free)'}
+              {(user as any)?.isPremium ? t('progress.therapistReport') : t('progress.reportFree')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -173,10 +173,13 @@ export default function ProgressScreen() {
             <View style={styles.streakCard}>
               <View style={styles.streakLeft}>
                 <Text style={styles.streakNum}>{streak}</Text>
-                <Text style={styles.streakLabel}>day streak</Text>
+                <Text style={styles.streakLabel}>{t('progress.dayStreak')}</Text>
                 {nextMilestone && (
                   <Text style={styles.nextMilestone}>
-                    {daysToNext} day{daysToNext !== 1 ? 's' : ''} until {nextMilestone.icon} {nextMilestone.label}
+                    {t('progress.daysUntil', {
+                      count: daysToNext,
+                      milestone: `${nextMilestone.icon} ${t('milestones.' + nextMilestone.days)}`,
+                    })}
                   </Text>
                 )}
               </View>
@@ -185,14 +188,14 @@ export default function ProgressScreen() {
 
             {/* Stats row */}
             <View style={styles.statsRow}>
-              <StatBox value={stats?.totalResisted ?? 0} label="Resisted" color={COLORS.secondary} />
-              <StatBox value={stats?.totalSos ?? 0}      label="SOS used" color={COLORS.primary}   />
-              <StatBox value={stats?.totalUsed ?? 0}     label="Slips"    color={COLORS.warning}   />
+              <StatBox value={stats?.totalResisted ?? 0} label={t('progress.resisted')} color={COLORS.secondary} />
+              <StatBox value={stats?.totalSos ?? 0}      label={t('progress.sosUsed')}  color={COLORS.primary}   />
+              <StatBox value={stats?.totalUsed ?? 0}     label={t('progress.slips')}    color={COLORS.warning}   />
             </View>
 
             {/* Weekly bar chart */}
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>This week — times resisted</Text>
+              <Text style={styles.cardTitle}>{t('progress.thisWeek')}</Text>
               <View style={styles.chart}>
                 {weeklyData.map((val, i) => (
                   <View key={i} style={styles.barCol}>
@@ -203,7 +206,7 @@ export default function ProgressScreen() {
                         { height: `${(val / maxBar) * 100}%`, backgroundColor: val > 0 ? COLORS.primary : COLORS.border }
                       ]} />
                     </View>
-                    <Text style={styles.barLabel}>{DAY_LABELS[i]}</Text>
+                    <Text style={styles.barLabel}>{t('days.' + DAY_KEYS[i])}</Text>
                   </View>
                 ))}
               </View>
@@ -211,7 +214,7 @@ export default function ProgressScreen() {
 
             {/* Milestones */}
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Milestones</Text>
+              <Text style={styles.cardTitle}>{t('progress.milestones')}</Text>
               {MILESTONES.map(m => {
                 const achieved = streak >= m.days;
                 return (
@@ -219,13 +222,13 @@ export default function ProgressScreen() {
                     <Text style={styles.milestoneIcon}>{m.icon}</Text>
                     <View style={styles.milestoneInfo}>
                       <Text style={[styles.milestoneName, achieved && styles.milestoneNameDone]}>
-                        {m.label}
+                        {t('milestones.' + m.days)}
                       </Text>
-                      <Text style={styles.milestoneDays}>{m.days} days clean</Text>
+                      <Text style={styles.milestoneDays}>{t('progress.daysClean', { count: m.days })}</Text>
                     </View>
                     {achieved
                       ? <Ionicons name="checkmark-circle" size={22} color={COLORS.secondary} />
-                      : <Text style={styles.milestoneLocked}>{m.days - streak}d left</Text>
+                      : <Text style={styles.milestoneLocked}>{t('progress.dLeft', { count: m.days - streak })}</Text>
                     }
                   </View>
                 );
@@ -234,19 +237,18 @@ export default function ProgressScreen() {
           </>
         )}
       </ScrollView>
+
       {/* Therapist Report Modal */}
       <Modal visible={reportModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modal}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Therapist Report</Text>
+              <Text style={styles.modalTitle}>{t('progress.reportTitle')}</Text>
               <TouchableOpacity onPress={() => setReportModal(false)}>
                 <Ionicons name="close" size={22} color={COLORS.textMuted} />
               </TouchableOpacity>
             </View>
-            <Text style={styles.modalDesc}>
-              Select journal entries to include. Your streak, mood chart, and stability score are always included.
-            </Text>
+            <Text style={styles.modalDesc}>{t('progress.reportDesc')}</Text>
 
             {logsWithNotes.length > 0 ? (
               <ScrollView style={styles.logPicker} showsVerticalScrollIndicator={false}>
@@ -269,7 +271,7 @@ export default function ProgressScreen() {
                 ))}
               </ScrollView>
             ) : (
-              <Text style={styles.noNotes}>No journal entries with notes found. The report will still include your stats and mood chart.</Text>
+              <Text style={styles.noNotes}>{t('progress.noNotes')}</Text>
             )}
 
             <TouchableOpacity
@@ -281,12 +283,12 @@ export default function ProgressScreen() {
                 ? <ActivityIndicator color="#fff" size="small" />
                 : <>
                     <Ionicons name="share-outline" size={16} color="#fff" />
-                    <Text style={styles.generateBtnText}>Generate & Share PDF</Text>
+                    <Text style={styles.generateBtnText}>{t('progress.generateShare')}</Text>
                   </>
               }
             </TouchableOpacity>
             {!(user as any)?.isPremium && (
-              <Text style={styles.freeNote}>1 free report · Unlimited with Premium</Text>
+              <Text style={styles.freeNote}>{t('progress.freeReport')}</Text>
             )}
           </View>
         </View>

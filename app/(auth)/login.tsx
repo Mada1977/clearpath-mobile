@@ -6,14 +6,17 @@ import {
 import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/context/AuthContext';
 import { COLORS, LANGUAGES } from '../../src/constants';
 import { LanguagePickerModal } from '../../src/components/LanguagePickerModal';
+import { applyLocale } from '../../src/i18n';
 
 const LOCALE_KEY = 'clearpath_locale';
 
 export default function LoginScreen() {
   const { login } = useAuth();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -33,11 +36,12 @@ export default function LoginScreen() {
   async function handleSelectLocale(newLocale: string) {
     setLocale(newLocale);
     await AsyncStorage.setItem(LOCALE_KEY, newLocale);
+    applyLocale(newLocale);
   }
 
   async function handleLogin() {
     if (!email || !password) {
-      setErrorMsg('Please enter your email and password.');
+      setErrorMsg(t('auth.emailPasswordRequired'));
       return;
     }
     setErrorMsg('');
@@ -49,9 +53,9 @@ export default function LoginScreen() {
       const isNetwork = err.code === 'ERR_NETWORK' || err.message?.includes('Network Error');
       let msg: string;
       if (isTimeout || isNetwork) {
-        msg = 'Server is waking up (cold start) — please wait a few seconds and try again.';
+        msg = t('auth.serverWakingUp');
       } else {
-        msg = err.response?.data?.error || err.message || 'Sign in failed. Please check your credentials.';
+        msg = err.response?.data?.error || err.message || t('auth.signInFailed');
       }
       setErrorMsg(msg);
     } finally {
@@ -63,7 +67,7 @@ export default function LoginScreen() {
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.inner}>
         <Text style={styles.logo}>Bravely Path</Text>
-        <Text style={styles.tagline}>Your recovery companion</Text>
+        <Text style={styles.tagline}>{t('auth.tagline')}</Text>
 
         <TouchableOpacity style={styles.langBtn} onPress={() => setShowLangPicker(true)}>
           <Text style={styles.langFlag}>{currentLang.flag}</Text>
@@ -73,7 +77,7 @@ export default function LoginScreen() {
 
         <TextInput
           style={styles.input}
-          placeholder="Email"
+          placeholder={t('auth.email')}
           placeholderTextColor={COLORS.textMuted}
           value={email}
           onChangeText={setEmail}
@@ -84,7 +88,7 @@ export default function LoginScreen() {
         <View style={styles.passwordRow}>
           <TextInput
             style={styles.passwordInput}
-            placeholder="Password"
+            placeholder={t('auth.password')}
             placeholderTextColor={COLORS.textMuted}
             value={password}
             onChangeText={setPassword}
@@ -96,7 +100,7 @@ export default function LoginScreen() {
         </View>
 
         <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Sign in</Text>}
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t('auth.signIn')}</Text>}
         </TouchableOpacity>
 
         {!!errorMsg && (
@@ -108,13 +112,13 @@ export default function LoginScreen() {
 
         <Link href="/(auth)/forgot-password" asChild>
           <TouchableOpacity style={styles.forgotLink}>
-            <Text style={styles.forgotText}>Forgot password?</Text>
+            <Text style={styles.forgotText}>{t('auth.forgotPassword')}</Text>
           </TouchableOpacity>
         </Link>
 
         <Link href="/(auth)/register" asChild>
           <TouchableOpacity style={styles.link}>
-            <Text style={styles.linkText}>Don't have an account? <Text style={styles.linkBold}>Sign up</Text></Text>
+            <Text style={styles.linkText}>{t('auth.noAccount')} <Text style={styles.linkBold}>{t('auth.signUp')}</Text></Text>
           </TouchableOpacity>
         </Link>
       </View>

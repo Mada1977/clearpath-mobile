@@ -4,21 +4,23 @@ import {
   Alert, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/context/AuthContext';
 import api from '../../src/services/api';
 import { COLORS, ADDICTIONS } from '../../src/constants';
 
-const LOG_TYPES = [
-  { value: 'resisted',    label: 'Resisted',     icon: '💪' },
-  { value: 'used',        label: 'Slipped',       icon: '😔' },
-  { value: 'craving_sos', label: 'SOS Craving',   icon: '🆘' },
+const LOG_TYPE_KEYS = [
+  { value: 'resisted',    tKey: 'logs.resisted',   },
+  { value: 'used',        tKey: 'logs.slipped',    },
+  { value: 'craving_sos', tKey: 'logs.sosCraving', },
 ];
 
-const TRIGGERS = ['stress', 'boredom', 'social', 'emotional', 'habit', 'celebration', 'physical', 'seeing_others', 'unknown'];
-const MOODS    = ['rough', 'okay', 'good', 'great'];
+const TRIGGER_KEYS = ['stress', 'boredom', 'social', 'emotional', 'habit', 'celebration', 'physical', 'seeing_others', 'unknown'];
+const MOOD_KEYS    = ['rough', 'okay', 'good', 'great'];
 
 export default function LogsScreen() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [type, setType]           = useState('resisted');
   const [addiction, setAddiction] = useState(user?.addictions?.[0] || 'smoking');
   const [trigger, setTrigger]     = useState('stress');
@@ -33,12 +35,15 @@ export default function LogsScreen() {
       const { data } = await api.post('/logs', { type, addiction, trigger, mood });
       if (data.sos?.length) {
         setSosSteps(data.sos);
-        Alert.alert('SOS Steps', 'Your personalised steps are shown below.');
+        Alert.alert(t('logs.sosAlert'), t('logs.sosAlertMsg'));
       } else {
-        Alert.alert('Logged!', type === 'resisted' ? 'Great job staying strong! 💪' : 'It\'s okay — tomorrow is a new day.');
+        Alert.alert(
+          t('logs.sosAlert'),
+          type === 'resisted' ? t('logs.loggedResisted') : t('logs.loggedSlipped')
+        );
       }
     } catch (err: any) {
-      Alert.alert('Error', err.response?.data?.error || 'Could not save log.');
+      Alert.alert('Error', err.response?.data?.error || t('logs.couldNotSave'));
     } finally {
       setLoading(false);
     }
@@ -47,40 +52,44 @@ export default function LogsScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Log entry</Text>
+        <Text style={styles.title}>{t('logs.title')}</Text>
 
-        <Label text="What happened?" />
+        <Label text={t('logs.whatHappened')} />
         <Row>
-          {LOG_TYPES.map(t => (
-            <Chip key={t.value} label={`${t.icon} ${t.label}`} active={type === t.value} onPress={() => setType(t.value)} />
+          {LOG_TYPE_KEYS.map(ty => (
+            <Chip key={ty.value} label={t(ty.tKey)} active={type === ty.value} onPress={() => setType(ty.value)} />
           ))}
         </Row>
 
-        <Label text="Which addiction?" />
+        <Label text={t('logs.whichAddiction')} />
         <View style={styles.wrap}>
           {(user?.addictions?.length ? user.addictions : ADDICTIONS.map(a => a.value)).map(a => {
-            const label = ADDICTIONS.find(x => x.value === a)?.label ?? a;
+            const label = t('addictions.' + a, ADDICTIONS.find(x => x.value === a)?.label ?? a);
             return <Chip key={a} label={label} active={addiction === a} onPress={() => setAddiction(a)} />;
           })}
         </View>
 
-        <Label text="Trigger?" />
+        <Label text={t('logs.trigger')} />
         <View style={styles.wrap}>
-          {TRIGGERS.map(t => <Chip key={t} label={t} active={trigger === t} onPress={() => setTrigger(t)} />)}
+          {TRIGGER_KEYS.map(tk => (
+            <Chip key={tk} label={t('logs.' + tk)} active={trigger === tk} onPress={() => setTrigger(tk)} />
+          ))}
         </View>
 
-        <Label text="Mood?" />
+        <Label text={t('logs.mood')} />
         <Row>
-          {MOODS.map(m => <Chip key={m} label={m} active={mood === m} onPress={() => setMood(m)} />)}
+          {MOOD_KEYS.map(mk => (
+            <Chip key={mk} label={t('logs.' + mk)} active={mood === mk} onPress={() => setMood(mk)} />
+          ))}
         </Row>
 
         <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Save log</Text>}
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t('logs.saveLog')}</Text>}
         </TouchableOpacity>
 
         {sosSteps.length > 0 && (
           <View style={styles.sosBox}>
-            <Text style={styles.sosTitle}>Your SOS steps</Text>
+            <Text style={styles.sosTitle}>{t('logs.sosStepsTitle')}</Text>
             {sosSteps.map((step, i) => (
               <Text key={i} style={styles.sosStep}>{i + 1}. {step}</Text>
             ))}

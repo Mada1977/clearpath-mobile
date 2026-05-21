@@ -19,9 +19,9 @@ import {
 
 // ─── Static fallback plan data ────────────────────────────────────────────────
 const PLANS = [
-  { key: 'weekly',  price: '€6.99',  period: '/week',  label: 'Weekly',  badge: null,                    trialNote: '3 days free, then €6.99/week',   rcType: 'WEEKLY'  },
-  { key: 'monthly', price: '€9.99',  period: '/month', label: 'Monthly', badge: 'Most popular',           trialNote: '3 days free, then €9.99/month',  rcType: 'MONTHLY' },
-  { key: 'yearly',  price: '€59.99', period: '/year',  label: 'Yearly',  badge: 'Best value — save 50%', trialNote: '3 days free, then €59.99/year',  rcType: 'ANNUAL'  },
+  { key: 'weekly',  price: '€8.99',  period: '/week',  label: 'Weekly',  badge: null,                    trialNote: '3 days free, then €8.99/week',   rcType: 'WEEKLY'  },
+  { key: 'monthly', price: '€12.99', period: '/month', label: 'Monthly', badge: 'Most popular',           trialNote: '3 days free, then €12.99/month', rcType: 'MONTHLY' },
+  { key: 'yearly',  price: '€69.99', period: '/year',  label: 'Yearly',  badge: 'Best value — save 55%', trialNote: '3 days free, then €69.99/year',  rcType: 'ANNUAL'  },
 ];
 
 const FEATURES = [

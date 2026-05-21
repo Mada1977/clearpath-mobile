@@ -4,25 +4,26 @@ export const API_BASE_URL =
 export const LANGUAGES = [
   { code: 'en', locale: 'en-US', flag: '🇬🇧', label: 'English',    nativeLabel: 'English'    },
   { code: 'fr', locale: 'fr-FR', flag: '🇫🇷', label: 'French',     nativeLabel: 'Français'   },
-  { code: 'ko', locale: 'ko-KR', flag: '🇰🇷', label: 'Korean',     nativeLabel: '한국어'      },
-  { code: 'es', locale: 'es-ES', flag: '🇪🇸', label: 'Spanish',    nativeLabel: 'Español'    },
-  { code: 'ro', locale: 'ro-RO', flag: '🇷🇴', label: 'Romanian',   nativeLabel: 'Română'     },
-  { code: 'pt', locale: 'pt-BR', flag: '🇧🇷', label: 'Portuguese', nativeLabel: 'Português'  },
   { code: 'ar', locale: 'ar-SA', flag: '🇸🇦', label: 'Arabic',     nativeLabel: 'العربية'    },
+  { code: 'es', locale: 'es-ES', flag: '🇪🇸', label: 'Spanish',    nativeLabel: 'Español'    },
+  { code: 'pt', locale: 'pt-BR', flag: '🇧🇷', label: 'Portuguese', nativeLabel: 'Português'  },
   { code: 'de', locale: 'de-DE', flag: '🇩🇪', label: 'German',     nativeLabel: 'Deutsch'    },
   { code: 'it', locale: 'it-IT', flag: '🇮🇹', label: 'Italian',    nativeLabel: 'Italiano'   },
+  { code: 'ro', locale: 'ro-RO', flag: '🇷🇴', label: 'Romanian',   nativeLabel: 'Română'     },
+  { code: 'nl', locale: 'nl-NL', flag: '🇳🇱', label: 'Dutch',      nativeLabel: 'Nederlands' },
+  { code: 'pl', locale: 'pl-PL', flag: '🇵🇱', label: 'Polish',     nativeLabel: 'Polski'     },
   { code: 'tr', locale: 'tr-TR', flag: '🇹🇷', label: 'Turkish',    nativeLabel: 'Türkçe'     },
 ];
 
 export const ADDICTIONS = [
-  { value: 'smoking',      label: 'Smoking' },
-  { value: 'alcohol',      label: 'Alcohol' },
-  { value: 'drugs',        label: 'Drugs' },
-  { value: 'gambling',     label: 'Gambling' },
-  { value: 'pornography',  label: 'Pornography' },
-  { value: 'gaming',       label: 'Gaming' },
+  { value: 'smoking',      label: 'Smoking'      },
+  { value: 'alcohol',      label: 'Alcohol'      },
+  { value: 'drugs',        label: 'Drugs'        },
+  { value: 'gambling',     label: 'Gambling'     },
+  { value: 'pornography',  label: 'Pornography'  },
+  { value: 'gaming',       label: 'Gaming'       },
   { value: 'social_media', label: 'Social Media' },
-  { value: 'shopping',     label: 'Shopping' },
+  { value: 'shopping',     label: 'Shopping'     },
 ];
 
 export const STAGES = [

@@ -6,14 +6,17 @@ import {
 import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/context/AuthContext';
 import { COLORS, LANGUAGES } from '../../src/constants';
 import { LanguagePickerModal } from '../../src/components/LanguagePickerModal';
+import { applyLocale } from '../../src/i18n';
 
 const LOCALE_KEY = 'clearpath_locale';
 
 export default function RegisterScreen() {
   const { register } = useAuth();
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,22 +36,23 @@ export default function RegisterScreen() {
   async function handleSelectLocale(newLocale: string) {
     setLocale(newLocale);
     await AsyncStorage.setItem(LOCALE_KEY, newLocale);
+    applyLocale(newLocale);
   }
 
   async function handleRegister() {
     if (!email || !password) {
-      Alert.alert('Error', 'Email and password are required.');
+      Alert.alert('Error', t('auth.emailRequired2'));
       return;
     }
     if (password.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters.');
+      Alert.alert('Error', t('auth.passwordTooShort'));
       return;
     }
     setLoading(true);
     try {
       await register(email.trim().toLowerCase(), password, name.trim(), locale);
     } catch (err: any) {
-      Alert.alert('Registration failed', err.response?.data?.error || 'Please try again.');
+      Alert.alert(t('auth.registrationFailed'), err.response?.data?.error || t('auth.signInFailed'));
     } finally {
       setLoading(false);
     }
@@ -58,7 +62,7 @@ export default function RegisterScreen() {
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
         <Text style={styles.logo}>Bravely Path</Text>
-        <Text style={styles.tagline}>Start your recovery journey</Text>
+        <Text style={styles.tagline}>{t('auth.taglineRegister')}</Text>
 
         <TouchableOpacity style={styles.langBtn} onPress={() => setShowLangPicker(true)}>
           <Text style={styles.langFlag}>{currentLang.flag}</Text>
@@ -68,7 +72,7 @@ export default function RegisterScreen() {
 
         <TextInput
           style={styles.input}
-          placeholder="Your name (optional)"
+          placeholder={t('auth.namePlaceholder')}
           placeholderTextColor={COLORS.textMuted}
           value={name}
           onChangeText={setName}
@@ -76,7 +80,7 @@ export default function RegisterScreen() {
         />
         <TextInput
           style={styles.input}
-          placeholder="Email"
+          placeholder={t('auth.email')}
           placeholderTextColor={COLORS.textMuted}
           value={email}
           onChangeText={setEmail}
@@ -87,7 +91,7 @@ export default function RegisterScreen() {
         <View style={styles.passwordRow}>
           <TextInput
             style={styles.passwordInput}
-            placeholder="Password (min 8 characters)"
+            placeholder={t('auth.passwordMin')}
             placeholderTextColor={COLORS.textMuted}
             value={password}
             onChangeText={setPassword}
@@ -99,12 +103,12 @@ export default function RegisterScreen() {
         </View>
 
         <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Create account</Text>}
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t('auth.createAccount')}</Text>}
         </TouchableOpacity>
 
         <Link href="/(auth)/login" asChild>
           <TouchableOpacity style={styles.link}>
-            <Text style={styles.linkText}>Already have an account? <Text style={styles.linkBold}>Sign in</Text></Text>
+            <Text style={styles.linkText}>{t('auth.haveAccount')} <Text style={styles.linkBold}>{t('auth.signIn')}</Text></Text>
           </TouchableOpacity>
         </Link>
       </ScrollView>

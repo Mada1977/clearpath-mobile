@@ -7,14 +7,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../src/context/AuthContext';
 import api from '../src/services/api';
 import { COLORS, ADDICTIONS, STAGES } from '../src/constants';
 
-const ROLES = [
-  { value: 'self',         icon: '🙋',  label: 'For myself',        sub: 'I want to recover' },
-  { value: 'friend',       icon: '🤝',  label: 'For someone I love', sub: 'Supporting a friend or family member' },
-  { value: 'professional', icon: '🏥',  label: 'As a professional',  sub: 'I support people in recovery' },
+const ROLE_KEYS = [
+  { value: 'self',         icon: '🙋',  labelKey: 'onboarding.roleForMyself',      subKey: 'onboarding.roleForMyselfSub'      },
+  { value: 'friend',       icon: '🤝',  labelKey: 'onboarding.roleForSomeone',     subKey: 'onboarding.roleForSomeoneSub'     },
+  { value: 'professional', icon: '🏥',  labelKey: 'onboarding.roleAsProfessional', subKey: 'onboarding.roleAsProfessionalSub' },
 ];
 
 const TOTAL_STEPS = 4;
@@ -22,6 +23,7 @@ const TOTAL_STEPS = 4;
 export default function OnboardingScreen() {
   const router = useRouter();
   const { refreshUser } = useAuth();
+  const { t } = useTranslation();
 
   const [step, setStep]             = useState(0);
   const [role, setRole]             = useState('');
@@ -51,7 +53,7 @@ export default function OnboardingScreen() {
       await refreshUser();
       router.replace('/(tabs)');
     } catch (e: any) {
-      setError(e?.response?.data?.error || 'Could not save your profile. Please try again.');
+      setError(e?.response?.data?.error || t('onboarding.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -75,16 +77,16 @@ export default function OnboardingScreen() {
         {step === 0 && (
           <View style={styles.step}>
             <Text style={styles.emoji}>✨</Text>
-            <Text style={styles.heading}>Welcome to{'\n'}Bravely Path</Text>
-            <Text style={styles.sub}>Your private, AI-powered recovery companion. Let's set up your profile in just a few steps.</Text>
+            <Text style={styles.heading}>{t('onboarding.welcomeHeading')}</Text>
+            <Text style={styles.sub}>{t('onboarding.welcomeSub')}</Text>
           </View>
         )}
 
         {/* Step 1 — Role */}
         {step === 1 && (
           <View style={styles.step}>
-            <Text style={styles.heading}>Who are you here for?</Text>
-            {ROLES.map(r => (
+            <Text style={styles.heading}>{t('onboarding.roleHeading')}</Text>
+            {ROLE_KEYS.map(r => (
               <TouchableOpacity
                 key={r.value}
                 style={[styles.roleCard, role === r.value && styles.roleCardActive]}
@@ -92,8 +94,8 @@ export default function OnboardingScreen() {
               >
                 <Text style={styles.roleIcon}>{r.icon}</Text>
                 <View style={styles.roleText}>
-                  <Text style={[styles.roleLabel, role === r.value && styles.roleLabelActive]}>{r.label}</Text>
-                  <Text style={styles.roleSub}>{r.sub}</Text>
+                  <Text style={[styles.roleLabel, role === r.value && styles.roleLabelActive]}>{t(r.labelKey)}</Text>
+                  <Text style={styles.roleSub}>{t(r.subKey)}</Text>
                 </View>
                 {role === r.value && <Ionicons name="checkmark-circle" size={22} color={COLORS.primary} />}
               </TouchableOpacity>
@@ -104,8 +106,8 @@ export default function OnboardingScreen() {
         {/* Step 2 — Addictions */}
         {step === 2 && (
           <View style={styles.step}>
-            <Text style={styles.heading}>What would you like{'\n'}to work on?</Text>
-            <Text style={styles.sub}>Select all that apply. You can change this later.</Text>
+            <Text style={styles.heading}>{t('onboarding.addictionsHeading')}</Text>
+            <Text style={styles.sub}>{t('onboarding.addictionsSub')}</Text>
             <View style={styles.chipWrap}>
               {ADDICTIONS.map(a => (
                 <TouchableOpacity
@@ -114,7 +116,7 @@ export default function OnboardingScreen() {
                   onPress={() => toggleAddiction(a.value)}
                 >
                   <Text style={[styles.chipText, addictions.includes(a.value) && styles.chipTextActive]}>
-                    {a.label}
+                    {t('addictions.' + a.value, a.label)}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -125,15 +127,17 @@ export default function OnboardingScreen() {
         {/* Step 3 — Stage */}
         {step === 3 && (
           <View style={styles.step}>
-            <Text style={styles.heading}>Where are you right now?</Text>
-            <Text style={styles.sub}>Be honest — there's no wrong answer.</Text>
+            <Text style={styles.heading}>{t('onboarding.stageHeading')}</Text>
+            <Text style={styles.sub}>{t('onboarding.stageSub')}</Text>
             {STAGES.map(s => (
               <TouchableOpacity
                 key={s.value}
                 style={[styles.stageCard, stage === s.value && styles.stageCardActive]}
                 onPress={() => setStage(s.value)}
               >
-                <Text style={[styles.stageLabel, stage === s.value && styles.stageLabelActive]}>{s.label}</Text>
+                <Text style={[styles.stageLabel, stage === s.value && styles.stageLabelActive]}>
+                  {t('stages.' + s.value, s.label)}
+                </Text>
                 {stage === s.value && <Ionicons name="checkmark-circle" size={20} color={COLORS.primary} />}
               </TouchableOpacity>
             ))}
@@ -141,7 +145,7 @@ export default function OnboardingScreen() {
         )}
       </ScrollView>
 
-      {/* Inline error — shown instead of Alert.alert for web compatibility */}
+      {/* Inline error */}
       {!!error && (
         <View style={styles.errorBanner}>
           <Text style={styles.errorText}>{error}</Text>
@@ -162,7 +166,7 @@ export default function OnboardingScreen() {
         >
           {saving
             ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.nextBtnText}>{step === TOTAL_STEPS - 1 ? "Let's go" : 'Continue'}</Text>
+            : <Text style={styles.nextBtnText}>{step === TOTAL_STEPS - 1 ? t('onboarding.letsGo') : t('onboarding.continue')}</Text>
           }
         </TouchableOpacity>
       </View>

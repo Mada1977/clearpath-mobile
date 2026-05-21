@@ -6,10 +6,12 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 import { API_BASE_URL, COLORS } from '../../src/constants';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -17,7 +19,7 @@ export default function ForgotPasswordScreen() {
 
   async function handleSubmit() {
     if (!email.trim()) {
-      setError('Please enter your email address.');
+      setError(t('auth.emailRequired3'));
       return;
     }
     setError('');
@@ -40,12 +42,10 @@ export default function ForgotPasswordScreen() {
           <View style={styles.iconCircle}>
             <Ionicons name="mail-outline" size={36} color={COLORS.primary} />
           </View>
-          <Text style={styles.title}>Check your inbox</Text>
-          <Text style={styles.subtitle}>
-            If an account exists for {email}, we've sent a password reset link. It expires in 1 hour.
-          </Text>
+          <Text style={styles.title}>{t('auth.checkInbox')}</Text>
+          <Text style={styles.subtitle}>{t('auth.checkInboxSubtitle', { email })}</Text>
           <TouchableOpacity style={styles.button} onPress={() => router.back()}>
-            <Text style={styles.buttonText}>Back to sign in</Text>
+            <Text style={styles.buttonText}>{t('auth.backToSignIn')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -57,17 +57,15 @@ export default function ForgotPasswordScreen() {
       <View style={styles.inner}>
         <TouchableOpacity style={styles.backRow} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={20} color={COLORS.primary} />
-          <Text style={styles.backText}>Back to sign in</Text>
+          <Text style={styles.backText}>{t('auth.backToSignIn')}</Text>
         </TouchableOpacity>
 
-        <Text style={styles.title}>Forgot password?</Text>
-        <Text style={styles.subtitle}>
-          Enter your email address and we'll send you a link to reset your password.
-        </Text>
+        <Text style={styles.title}>{t('auth.forgotTitle')}</Text>
+        <Text style={styles.subtitle}>{t('auth.forgotSubtitle')}</Text>
 
         <TextInput
           style={styles.input}
-          placeholder="Email address"
+          placeholder={t('auth.emailAddress')}
           placeholderTextColor={COLORS.textMuted}
           value={email}
           onChangeText={setEmail}
@@ -85,7 +83,7 @@ export default function ForgotPasswordScreen() {
         )}
 
         <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Send reset link</Text>}
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t('auth.sendResetLink')}</Text>}
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
