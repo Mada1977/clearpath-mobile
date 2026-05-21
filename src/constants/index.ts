@@ -2,16 +2,16 @@ export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ?? 'https://clearpath-backend-marl.onrender.com/v1';
 
 export const LANGUAGES = [
+  { code: 'ar', locale: 'ar-SA', flag: '🇸🇦', label: 'Arabic',     nativeLabel: 'العربية'    },
+  { code: 'nl', locale: 'nl-NL', flag: '🇳🇱', label: 'Dutch',      nativeLabel: 'Nederlands' },
   { code: 'en', locale: 'en-US', flag: '🇬🇧', label: 'English',    nativeLabel: 'English'    },
   { code: 'fr', locale: 'fr-FR', flag: '🇫🇷', label: 'French',     nativeLabel: 'Français'   },
-  { code: 'ar', locale: 'ar-SA', flag: '🇸🇦', label: 'Arabic',     nativeLabel: 'العربية'    },
-  { code: 'es', locale: 'es-ES', flag: '🇪🇸', label: 'Spanish',    nativeLabel: 'Español'    },
-  { code: 'pt', locale: 'pt-BR', flag: '🇧🇷', label: 'Portuguese', nativeLabel: 'Português'  },
   { code: 'de', locale: 'de-DE', flag: '🇩🇪', label: 'German',     nativeLabel: 'Deutsch'    },
   { code: 'it', locale: 'it-IT', flag: '🇮🇹', label: 'Italian',    nativeLabel: 'Italiano'   },
-  { code: 'ro', locale: 'ro-RO', flag: '🇷🇴', label: 'Romanian',   nativeLabel: 'Română'     },
-  { code: 'nl', locale: 'nl-NL', flag: '🇳🇱', label: 'Dutch',      nativeLabel: 'Nederlands' },
   { code: 'pl', locale: 'pl-PL', flag: '🇵🇱', label: 'Polish',     nativeLabel: 'Polski'     },
+  { code: 'pt', locale: 'pt-BR', flag: '🇧🇷', label: 'Portuguese', nativeLabel: 'Português'  },
+  { code: 'ro', locale: 'ro-RO', flag: '🇷🇴', label: 'Romanian',   nativeLabel: 'Română'     },
+  { code: 'es', locale: 'es-ES', flag: '🇪🇸', label: 'Spanish',    nativeLabel: 'Español'    },
   { code: 'tr', locale: 'tr-TR', flag: '🇹🇷', label: 'Turkish',    nativeLabel: 'Türkçe'     },
 ];
 
