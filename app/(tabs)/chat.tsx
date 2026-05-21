@@ -31,6 +31,18 @@ const FREE_DAILY_LIMIT = 10;
 const UPGRADE_PROMPT_THRESHOLD = 3;
 const TTS_KEY = 'bp_tts_enabled';
 
+const LANGUAGE_NAME_TO_TTS: Record<string, string> = {
+  French: 'fr-FR', Romanian: 'ro-RO', Arabic: 'ar-SA', Spanish: 'es-ES',
+  Portuguese: 'pt-PT', German: 'de-DE', Italian: 'it-IT', Dutch: 'nl-NL',
+  Polish: 'pl-PL', Turkish: 'tr-TR', Korean: 'ko-KR', English: 'en-US',
+};
+
+function detectClientLanguage(text: string): string | null {
+  if (/[؀-ۿ]/.test(text)) return 'ar-SA';
+  if (/[가-힯ᄀ-ᇿ㄰-㆏]/.test(text)) return 'ko-KR';
+  return null;
+}
+
 type Message = { id: string; role: 'user' | 'assistant'; content: string; fromVoice?: boolean };
 
 export default function ChatScreen() {
@@ -191,6 +203,7 @@ export default function ChatScreen() {
 
     const token = await secureStorage.getItemAsync('accessToken');
     let fullAiResponse = '';
+    let detectedTtsLocale: string | null = detectClientLanguage(text);
 
     await new Promise<void>((resolve) => {
       const xhr = new XMLHttpRequest();
@@ -221,6 +234,9 @@ export default function ChatScreen() {
               listRef.current?.scrollToEnd({ animated: false });
             }
             if (event.type === 'crisis') setCrisis(event);
+            if (event.type === 'done' && event.detectedLanguage && !detectedTtsLocale) {
+              detectedTtsLocale = LANGUAGE_NAME_TO_TTS[event.detectedLanguage] ?? null;
+            }
             if (event.type === 'error') {
               setMessages(prev => prev.map(m =>
                 m.id === assistantId ? { ...m, content: event.message } : m
@@ -235,7 +251,7 @@ export default function ChatScreen() {
         setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
         resolve();
 
-        if (ttsEnabled && fullAiResponse) speakMessage(fullAiResponse, assistantId);
+        if (ttsEnabled && fullAiResponse) speakMessage(fullAiResponse, assistantId, detectedTtsLocale);
 
         sessionMessageCount.current += 1;
         if (!isPremium && sessionMessageCount.current >= UPGRADE_PROMPT_THRESHOLD) {
@@ -267,11 +283,11 @@ export default function ChatScreen() {
     return TTS_LOCALE[code] ?? 'en-US';
   }
 
-  function speakMessage(text: string, msgId: string) {
+  function speakMessage(text: string, msgId: string, ttsLocale?: string | null) {
     Speech.stop();
     setSpeakingMsgId(msgId);
     Speech.speak(text.replace(/\*\*/g, ''), {
-      language: getTtsLocale(user?.locale),
+      language: ttsLocale ?? getTtsLocale(user?.locale),
       rate: 0.9,
       onDone: () => setSpeakingMsgId(null),
       onStopped: () => setSpeakingMsgId(null),
@@ -281,7 +297,7 @@ export default function ChatScreen() {
 
   function toggleSpeakMessage(text: string, msgId: string) {
     if (speakingMsgId === msgId) { Speech.stop(); setSpeakingMsgId(null); }
-    else speakMessage(text, msgId);
+    else speakMessage(text, msgId, detectClientLanguage(text));
   }
 
   const remainingMessages = Math.max(0, FREE_DAILY_LIMIT - messagesUsedToday);
