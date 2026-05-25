@@ -8,6 +8,7 @@ export const LANGUAGES = [
   { code: 'fr', locale: 'fr-FR', flag: '🇫🇷', label: 'French',     nativeLabel: 'Français'   },
   { code: 'de', locale: 'de-DE', flag: '🇩🇪', label: 'German',     nativeLabel: 'Deutsch'    },
   { code: 'it', locale: 'it-IT', flag: '🇮🇹', label: 'Italian',    nativeLabel: 'Italiano'   },
+  { code: 'ko', locale: 'ko-KR', flag: '🇰🇷', label: 'Korean',     nativeLabel: '한국어'      },
   { code: 'pl', locale: 'pl-PL', flag: '🇵🇱', label: 'Polish',     nativeLabel: 'Polski'     },
   { code: 'pt', locale: 'pt-BR', flag: '🇧🇷', label: 'Portuguese', nativeLabel: 'Português'  },
   { code: 'ro', locale: 'ro-RO', flag: '🇷🇴', label: 'Romanian',   nativeLabel: 'Română'     },

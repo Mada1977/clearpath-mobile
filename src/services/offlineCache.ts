@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import i18n from '../i18n';
 
 const KEYS = {
   STATS:        'bp_cache_stats',
@@ -62,6 +63,11 @@ export async function cacheCopingTips(locale: string) {
 }
 
 export async function getCachedCopingTips(): Promise<string[]> {
+  // Use the live i18n language to read directly from the in-memory map — this
+  // avoids stale AsyncStorage reads and race conditions after a language change.
+  const lang = (i18n.language ?? 'en').slice(0, 2).toLowerCase();
+  if (COPING_TIPS[lang]) return COPING_TIPS[lang];
+  // Fallback: read from AsyncStorage (covers languages outside the map)
   const raw = await AsyncStorage.getItem(KEYS.COPING_TIPS);
   return raw ? JSON.parse(raw) : COPING_TIPS['en'];
 }
