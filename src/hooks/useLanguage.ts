@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { LANGUAGES } from '../constants';
 import { applyLocale } from '../i18n';
+import { cacheCopingTips } from '../services/offlineCache';
 
 const STORAGE_KEY = 'clearpath_locale';
 
@@ -17,6 +18,7 @@ export function useLanguage() {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, locale);
       applyLocale(locale);
+      cacheCopingTips(locale);
       await api.patch('/users/me', { locale });
       await refreshUser();
     } catch (err) {
