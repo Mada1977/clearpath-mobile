@@ -16,8 +16,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "icon": "./assets/icon.png",
-      "keywords": "sobriety,addiction recovery,quit drinking,recovery coach,sober tracker,sobriety counter,alcohol free"
+      "icon": "./assets/icon.png"
     },
     "android": {
       "package": "com.bravelypath.app",
