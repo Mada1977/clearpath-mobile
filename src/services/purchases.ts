@@ -26,6 +26,12 @@ export function configurePurchases(userId: string): void {
       ? (process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? '')
       : (process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ?? ''));
   if (!key) return;
+  // test_ keys are sandbox-only — RC crashes in release builds when it sees one.
+  // Skip initialization so the app runs in a no-premium state during preview testing.
+  if (key.startsWith('test_') && !__DEV__) {
+    console.warn('[RC] Skipping: test_ key is not valid in a release build. Replace with a production key for full IAP support.');
+    return;
+  }
   try {
     Purchases.setLogLevel(RC.LOG_LEVEL?.ERROR ?? 4);
     Purchases.configure({ apiKey: key, appUserID: userId });
