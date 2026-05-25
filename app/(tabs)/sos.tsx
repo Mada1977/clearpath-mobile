@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../src/context/AuthContext';
+import { useLanguage } from '../../src/hooks/useLanguage';
 import api from '../../src/services/api';
 import { COLORS, ADDICTIONS } from '../../src/constants';
 import { getHelplinesByLocale, openHelpline, type Helpline } from '../../src/constants/helplines';
@@ -19,6 +20,7 @@ const TIMER_SECONDS = 5 * 60;
 
 export default function SosScreen() {
   const { user } = useAuth();
+  const { currentLanguage } = useLanguage();
   const { isOffline } = useOffline();
   const { t } = useTranslation();
   const [active, setActive]       = useState(false);
@@ -60,6 +62,10 @@ export default function SosScreen() {
       setActive(false);
     }
   }, [seconds, stopTimer]);
+
+  useEffect(() => {
+    if (active) loadSteps(selectedAddiction);
+  }, [currentLanguage.code]);
 
   async function loadSteps(addiction: string) {
     setLoadingSteps(true);
