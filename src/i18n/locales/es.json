@@ -107,7 +107,14 @@
     "itsOkayMsg": "Cada tropiezo es un peldaño. Mañana es un nuevo día.",
     "emergency": "Contactos de Emergencia y Crisis",
     "dial112Note": "¿No sabes a quién llamar?\nMarca 112 — funciona en la mayoría de países.",
-    "couldNotSave": "No se pudo guardar el registro."
+    "couldNotSave": "No se pudo guardar el registro.",
+    "offlineSteps": [
+      "Respira lentamente 5 veces: inhala 4 tiempos, mantén 4, exhala 4.",
+      "Bebe despacio un vaso grande de agua fría.",
+      "Sal o abre una ventana — el aire fresco interrumpe el impulso.",
+      "Llama o escribe a alguien de confianza ahora mismo.",
+      "Este impulso pasará en 5–10 minutos. Solo aguanta."
+    ]
   },
   "progress": {
     "title": "Progreso",

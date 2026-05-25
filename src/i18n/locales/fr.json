@@ -107,7 +107,14 @@
     "itsOkayMsg": "Chaque rechute est une étape vers la résilience. Demain est un nouveau jour.",
     "emergency": "Contacts d'urgence et de crise",
     "dial112Note": "Vous ne savez pas quel numéro appeler ?\nComposez le 112 — fonctionne dans la plupart des pays.",
-    "couldNotSave": "Impossible d'enregistrer le journal."
+    "couldNotSave": "Impossible d'enregistrer le journal.",
+    "offlineSteps": [
+      "Prends 5 respirations lentes — inspire 4 temps, retiens 4, expire 4.",
+      "Bois un grand verre d'eau froide lentement.",
+      "Sors ou ouvre une fenêtre — l'air frais coupe l'envie.",
+      "Appelle ou envoie un message à quelqu'un de confiance.",
+      "Cette envie va passer en 5 à 10 minutes. Tiens bon."
+    ]
   },
   "progress": {
     "title": "Progrès",

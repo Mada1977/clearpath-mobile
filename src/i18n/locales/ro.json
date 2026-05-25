@@ -108,7 +108,14 @@
     "itsOkayMsg": "Fiecare pas înapoi e o oportunitate. Mâine e o zi nouă.",
     "emergency": "Contacte de Urgență și Criză",
     "dial112Note": "Nu știi pe cine să suni?\nSună 112 — funcționează în majoritatea țărilor.",
-    "couldNotSave": "Nu s-a putut salva jurnalul."
+    "couldNotSave": "Nu s-a putut salva jurnalul.",
+    "offlineSteps": [
+      "Respiră lent de 5 ori: inspiră 4 timpi, ține 4, expiră 4.",
+      "Bea un pahar mare de apă rece încet.",
+      "Ieși afară sau deschide o fereastră — aerul proaspăt întrerupe reflexul poftei.",
+      "Sună sau trimite un mesaj cuiva de încredere acum.",
+      "Această poftă va trece în 5–10 minute. Rezistă."
+    ]
   },
   "progress": {
     "title": "Progres",

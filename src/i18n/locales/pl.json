@@ -109,7 +109,14 @@
     "itsOkayMsg": "Każde potknięcie jest krokiem naprzód. Jutro jest nowy dzień.",
     "emergency": "Kontakty Alarmowe i Kryzysowe",
     "dial112Note": "Nie wiesz kogo zadzwonić?\nZadzwoń pod 112 — działa w większości krajów.",
-    "couldNotSave": "Nie udało się zapisać dziennika."
+    "couldNotSave": "Nie udało się zapisać dziennika.",
+    "offlineSteps": [
+      "Weź 5 powolnych, głębokich oddechów: wdech przez 4 sekundy, zatrzymaj na 4, wydech przez 4.",
+      "Powoli wypij duży szklankę zimnej wody.",
+      "Wyjdź na zewnątrz lub otwórz okno — świeże powietrze przerywa odruch głodu.",
+      "Zadzwoń lub napisz teraz do kogoś, komu ufasz.",
+      "To pragnienie osiągnie szczyt i minie w ciągu 5–10 minut. Wytrzymaj."
+    ]
   },
   "progress": {
     "title": "Postęp",

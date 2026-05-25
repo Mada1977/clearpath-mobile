@@ -107,7 +107,14 @@
     "itsOkayMsg": "Her geri adım bir ileri adımdır. Yarın yeni bir gündür.",
     "emergency": "Acil ve Kriz İletişim",
     "dial112Note": "Kimi arayacağınızı bilmiyor musunuz?\n112'yi arayın — çoğu ülkede çalışır.",
-    "couldNotSave": "Günlük kaydedilemedi."
+    "couldNotSave": "Günlük kaydedilemedi.",
+    "offlineSteps": [
+      "5 kez yavaş ve derin nefes al: 4 sayı nefes al, 4 tut, 4 ver.",
+      "Büyük bir bardak soğuk suyu yavaşça iç.",
+      "Dışarı çık veya bir pencere aç — temiz hava istek refleksini keser.",
+      "Güvendiğin birine hemen telefon et veya mesaj at.",
+      "Bu istek 5–10 dakika içinde zirveye ulaşacak ve geçecek. Sadece dayan."
+    ]
   },
   "progress": {
     "title": "İlerleme",

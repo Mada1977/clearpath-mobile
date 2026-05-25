@@ -107,7 +107,14 @@
     "itsOkayMsg": "Every setback is a setup for a comeback. Tomorrow is a new day.",
     "emergency": "Emergency & Crisis Contacts",
     "dial112Note": "Not sure which number to call?\nDial 112 — works in most countries and connects you to local emergency services.",
-    "couldNotSave": "Could not save log."
+    "couldNotSave": "Could not save log.",
+    "offlineSteps": [
+      "Take 5 slow deep breaths — inhale 4 counts, hold 4, exhale 4.",
+      "Drink a large glass of cold water slowly.",
+      "Go outside or open a window — fresh air disrupts the craving reflex.",
+      "Call or text someone you trust right now.",
+      "This craving will peak and pass in 5–10 minutes. Just hold on."
+    ]
   },
   "progress": {
     "title": "Progress",

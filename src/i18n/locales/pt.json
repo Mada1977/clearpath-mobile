@@ -107,7 +107,14 @@
     "itsOkayMsg": "Cada tropeço é um degrau. Amanhã é um novo dia.",
     "emergency": "Contatos de Emergência e Crise",
     "dial112Note": "Não sabe qual número ligar?\nDisque 112 — funciona na maioria dos países.",
-    "couldNotSave": "Não foi possível salvar o registro."
+    "couldNotSave": "Não foi possível salvar o registro.",
+    "offlineSteps": [
+      "Respira lentamente 5 vezes: inspira 4 tempos, segura 4, expira 4.",
+      "Bebe devagar um copo grande de água fria.",
+      "Sai ou abre uma janela — o ar fresco interrompe o impulso.",
+      "Liga ou manda mensagem a alguém de confiança agora.",
+      "Este impulso vai passar em 5–10 minutos. Aguenta."
+    ]
   },
   "progress": {
     "title": "Progresso",

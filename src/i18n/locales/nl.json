@@ -107,7 +107,14 @@
     "itsOkayMsg": "Elke terugval is een opstap. Morgen is een nieuwe dag.",
     "emergency": "Nood- en Crisiscontacten",
     "dial112Note": "Weet je niet wie je moet bellen?\nBel 112 — werkt in de meeste landen.",
-    "couldNotSave": "Log kon niet worden opgeslagen."
+    "couldNotSave": "Log kon niet worden opgeslagen.",
+    "offlineSteps": [
+      "Adem 5 keer langzaam en diep: 4 tellen inademen, 4 vasthouden, 4 uitademen.",
+      "Drink langzaam een groot glas koud water.",
+      "Ga naar buiten of open een raam — frisse lucht onderbreekt het verlangen.",
+      "Bel of stuur nu een bericht naar iemand die je vertrouwt.",
+      "Dit verlangen zal in 5–10 minuten pieken en voorbijgaan. Houd vol."
+    ]
   },
   "progress": {
     "title": "Voortgang",

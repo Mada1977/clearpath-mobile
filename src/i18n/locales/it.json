@@ -107,7 +107,14 @@
     "itsOkayMsg": "Ogni passo indietro è un trampolino. Domani è un nuovo giorno.",
     "emergency": "Contatti di Emergenza e Crisi",
     "dial112Note": "Non sai chi chiamare?\nChiama il 112 — funziona nella maggior parte dei paesi.",
-    "couldNotSave": "Impossibile salvare il registro."
+    "couldNotSave": "Impossibile salvare il registro.",
+    "offlineSteps": [
+      "Fai 5 respiri lenti: inspira 4 tempi, tieni 4, espira 4.",
+      "Bevi lentamente un grande bicchiere d'acqua fredda.",
+      "Esci o apri una finestra — l'aria fresca interrompe il desiderio.",
+      "Chiama o scrivi a qualcuno di fiducia ora.",
+      "Questo desiderio passerà in 5–10 minuti. Resisti."
+    ]
   },
   "progress": {
     "title": "Progressi",

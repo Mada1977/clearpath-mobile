@@ -107,7 +107,14 @@
     "itsOkayMsg": "Jeder Rückschlag ist ein Sprungbrett. Morgen ist ein neuer Tag.",
     "emergency": "Notfall- und Krisenkontakte",
     "dial112Note": "Weißt du nicht, wen du anrufen sollst?\nWähle 112 — funktioniert in den meisten Ländern.",
-    "couldNotSave": "Eintrag konnte nicht gespeichert werden."
+    "couldNotSave": "Eintrag konnte nicht gespeichert werden.",
+    "offlineSteps": [
+      "Atme 5 Mal langsam: 4 Zählungen einatmen, 4 halten, 4 ausatmen.",
+      "Trinke langsam ein großes Glas kaltes Wasser.",
+      "Geh nach draußen oder öffne ein Fenster — frische Luft unterbricht das Verlangen.",
+      "Ruf jetzt jemanden an oder schreib eine Nachricht — du musst nicht erklären warum.",
+      "Dieses Verlangen wird in 5–10 Minuten seinen Höhepunkt erreichen und vergehen. Halte durch."
+    ]
   },
   "progress": {
     "title": "Fortschritt",
