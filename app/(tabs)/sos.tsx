@@ -219,15 +219,15 @@ export default function SosScreen() {
           </View>
         )}
 
-        <HelplineSection locale={user?.locale ?? 'en-US'} />
+        <HelplineSection locale={user?.locale ?? 'en-US'} addictions={user?.addictions} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function HelplineSection({ locale }: { locale: string }) {
+function HelplineSection({ locale, addictions }: { locale: string; addictions?: string[] }) {
   const { t } = useTranslation();
-  const helplines = getHelplinesByLocale(locale);
+  const helplines = getHelplinesByLocale(locale, addictions);
   return (
     <View style={styles.helpCard}>
       <View style={styles.helpHeader}>

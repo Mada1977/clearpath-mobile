@@ -15,8 +15,9 @@ const LOG_TYPE_KEYS = [
   { value: 'craving_sos', tKey: 'logs.sosCraving', },
 ];
 
-const TRIGGER_KEYS = ['stress', 'boredom', 'social', 'emotional', 'habit', 'celebration', 'physical', 'seeing_others', 'unknown'];
-const MOOD_KEYS    = ['rough', 'okay', 'good', 'great'];
+const TRIGGER_KEYS      = ['stress', 'boredom', 'social', 'emotional', 'habit', 'celebration', 'physical', 'seeing_others', 'unknown'];
+const WORK_TRIGGER_KEYS = ['overworking', 'stress', 'fear_of_failure', 'need_for_control', 'perfectionism'];
+const MOOD_KEYS         = ['rough', 'okay', 'good', 'great'];
 
 export default function LogsScreen() {
   const { user } = useAuth();
@@ -71,7 +72,7 @@ export default function LogsScreen() {
 
         <Label text={t('logs.trigger')} />
         <View style={styles.wrap}>
-          {TRIGGER_KEYS.map(tk => (
+          {(addiction === 'work' ? WORK_TRIGGER_KEYS : TRIGGER_KEYS).map(tk => (
             <Chip key={tk} label={t('logs.' + tk)} active={trigger === tk} onPress={() => setTrigger(tk)} />
           ))}
         </View>

@@ -95,10 +95,33 @@ export const LOCAL_HELPLINES: Record<string, Helpline[]> = {
   ],
 };
 
-/** Returns international numbers first, then language-specific ones. */
-export function getHelplinesByLocale(locale: string): Helpline[] {
+export const WORK_HELPLINES: Helpline[] = [
+  {
+    name: 'Workaholics Anonymous',
+    number: 'workaholics-anonymous.org',
+    available: 'Global · 12-step support',
+    isWeb: true,
+  },
+  {
+    name: 'International Stress Management Association',
+    number: 'isma.org.uk',
+    available: 'Resources & support',
+    isWeb: true,
+  },
+  {
+    name: 'Mental Health America — Work-Life Balance',
+    number: 'mhanational.org',
+    available: 'Resources & self-help tools',
+    isWeb: true,
+  },
+];
+
+/** Returns international numbers first, then language-specific ones.
+ *  Pass addictions to include work-specific resources when 'work' is present. */
+export function getHelplinesByLocale(locale: string, addictions?: string[]): Helpline[] {
   const lang  = locale.slice(0, 2).toLowerCase();
-  const local = LOCAL_HELPLINES[lang] ?? LOCAL_HELPLINES['en'];
+  const isWork = addictions?.includes('work');
+  const local = isWork ? WORK_HELPLINES : (LOCAL_HELPLINES[lang] ?? LOCAL_HELPLINES['en']);
   return [...INTERNATIONAL_HELPLINES, ...local];
 }
 

@@ -37,6 +37,13 @@ const MILESTONES = [
   { days: 365, icon: '👑' },
 ];
 
+const WORK_MILESTONES = [
+  { days: 1,  icon: '🌅', key: 'firstEveningOff'        },
+  { days: 3,  icon: '🏖️', key: 'firstWeekendUnplugged'  },
+  { days: 7,  icon: '⏰', key: 'oneWeekHealthyHours'     },
+  { days: 30, icon: '⚖️', key: 'oneMonthBalanced'        },
+];
+
 const DAY_KEYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default function ProgressScreen() {
@@ -234,6 +241,31 @@ export default function ProgressScreen() {
                 );
               })}
             </View>
+
+            {/* Work addiction milestones */}
+            {user?.addictions?.includes('work') && (
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>{t('progress.workMilestones')}</Text>
+                {WORK_MILESTONES.map(m => {
+                  const achieved = streak >= m.days;
+                  return (
+                    <View key={m.key} style={[styles.milestoneRow, achieved && styles.milestoneAchieved]}>
+                      <Text style={styles.milestoneIcon}>{m.icon}</Text>
+                      <View style={styles.milestoneInfo}>
+                        <Text style={[styles.milestoneName, achieved && styles.milestoneNameDone]}>
+                          {t('workMilestones.' + m.key)}
+                        </Text>
+                        <Text style={styles.milestoneDays}>{t('progress.daysClean', { count: m.days })}</Text>
+                      </View>
+                      {achieved
+                        ? <Ionicons name="checkmark-circle" size={22} color={COLORS.secondary} />
+                        : <Text style={styles.milestoneLocked}>{t('progress.dLeft', { count: m.days - streak })}</Text>
+                      }
+                    </View>
+                  );
+                })}
+              </View>
+            )}
           </>
         )}
       </ScrollView>

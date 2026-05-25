@@ -124,6 +124,7 @@
     "thisWeek": "Săptămâna aceasta — de câte ori ai rezistat",
     "milestones": "Jaloane",
     "daysClean": "{{count}} zile curat",
+    "workMilestones": "Jaloane echilibru muncă-viață",
     "dLeft": "{{count}}z rămase",
     "reportTitle": "Raport terapeut",
     "reportDesc": "Selectează intrările din jurnal de inclus. Seria ta, graficul stării și scorul de stabilitate sunt mereu incluse.",
@@ -175,6 +176,10 @@
     "celebration": "celebrare",
     "physical": "fizic",
     "seeing_others": "văzând alții",
+    "overworking": "suprasolicitare",
+    "fear_of_failure": "frica de eșec",
+    "need_for_control": "nevoia de control",
+    "perfectionism": "perfecționism",
     "unknown": "necunoscut",
     "rough": "greu",
     "okay": "ok",
@@ -241,7 +246,8 @@
     "pornography": "Pornografie",
     "gaming": "Gaming",
     "social_media": "Rețele sociale",
-    "shopping": "Cumpărături"
+    "shopping": "Cumpărături",
+    "work": "Dependența de muncă"
   },
   "stages": {
     "curious": "Doar curios",
@@ -259,6 +265,12 @@
     "90": "3 luni",
     "180": "6 luni",
     "365": "1 an"
+  },
+  "workMilestones": {
+    "firstEveningOff": "Prima seară liberă",
+    "firstWeekendUnplugged": "Primul weekend deconectat",
+    "oneWeekHealthyHours": "1 săptămână de ore sănătoase",
+    "oneMonthBalanced": "1 lună echilibrată"
   },
   "days": {
     "Mon": "Lun",

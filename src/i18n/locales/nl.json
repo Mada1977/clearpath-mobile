@@ -122,6 +122,7 @@
     "thisWeek": "Deze week — keer weerstaan",
     "milestones": "Mijlpalen",
     "daysClean": "{{count}} dagen schoon",
+    "workMilestones": "Werk-privébalans mijlpalen",
     "dLeft": "{{count}}d over",
     "reportTitle": "Therapeutenrapport",
     "reportDesc": "Selecteer dagboekvermeldingen om op te nemen. Je reeks, stemmingsgrafiek en stabiliteitsscore worden altijd opgenomen.",
@@ -173,6 +174,10 @@
     "celebration": "viering",
     "physical": "fysiek",
     "seeing_others": "anderen zien",
+    "overworking": "overwerken",
+    "fear_of_failure": "faalangst",
+    "need_for_control": "controledrang",
+    "perfectionism": "perfectionisme",
     "unknown": "onbekend",
     "rough": "moeilijk",
     "okay": "ok",
@@ -238,7 +243,8 @@
     "pornography": "Pornografie",
     "gaming": "Gaming",
     "social_media": "Sociale media",
-    "shopping": "Winkelen"
+    "shopping": "Winkelen",
+    "work": "Werkverslaving"
   },
   "stages": {
     "curious": "Gewoon nieuwsgierig",
@@ -256,6 +262,12 @@
     "90": "3 maanden",
     "180": "6 maanden",
     "365": "1 jaar"
+  },
+  "workMilestones": {
+    "firstEveningOff": "Eerste vrije avond",
+    "firstWeekendUnplugged": "Eerste weekend offline",
+    "oneWeekHealthyHours": "1 week gezonde uren",
+    "oneMonthBalanced": "1 maand in balans"
   },
   "days": {
     "Mon": "Ma",

@@ -128,6 +128,7 @@
     "thisWeek": "هذا الأسبوع — مرات المقاومة",
     "milestones": "المعالم",
     "daysClean": "{{count}} يوم نظيف",
+    "workMilestones": "معالم التوازن بين العمل والحياة",
     "dLeft": "{{count}} يوم متبقي",
     "reportTitle": "تقرير المعالج",
     "reportDesc": "اختر الإدخالات لتضمينها. السلسلة ومخطط المزاج ودرجة الاستقرار مضمّنة دائماً.",
@@ -179,6 +180,10 @@
     "celebration": "احتفال",
     "physical": "جسدي",
     "seeing_others": "رؤية الآخرين",
+    "overworking": "الإفراط في العمل",
+    "fear_of_failure": "الخوف من الفشل",
+    "need_for_control": "الحاجة للتحكم",
+    "perfectionism": "الكمالية",
     "unknown": "غير معروف",
     "rough": "صعب",
     "okay": "مقبول",
@@ -247,7 +252,8 @@
     "pornography": "الإباحية",
     "gaming": "الألعاب",
     "social_media": "وسائل التواصل",
-    "shopping": "التسوق"
+    "shopping": "التسوق",
+    "work": "إدمان العمل"
   },
   "stages": {
     "curious": "فضولي",
@@ -265,6 +271,12 @@
     "90": "3 أشهر",
     "180": "6 أشهر",
     "365": "سنة"
+  },
+  "workMilestones": {
+    "firstEveningOff": "أول مساء بعيداً عن العمل",
+    "firstWeekendUnplugged": "أول عطلة نهاية أسبوع بعيداً عن العمل",
+    "oneWeekHealthyHours": "أسبوع بساعات عمل صحية",
+    "oneMonthBalanced": "شهر من التوازن"
   },
   "days": {
     "Mon": "الإثنين",

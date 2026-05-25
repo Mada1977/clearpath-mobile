@@ -126,6 +126,7 @@
     "thisWeek": "W tym tygodniu — razy oparłem się",
     "milestones": "Kamienie milowe",
     "daysClean": "{{count}} dni czysty",
+    "workMilestones": "Kamienie milowe balansu praca-życie",
     "dLeft": "{{count}}d pozostało",
     "reportTitle": "Raport terapeuty",
     "reportDesc": "Wybierz wpisy do dziennika do uwzględnienia. Twoja seria, wykres nastroju i wynik stabilności są zawsze uwzględniane.",
@@ -177,6 +178,10 @@
     "celebration": "celebracja",
     "physical": "fizyczne",
     "seeing_others": "widząc innych",
+    "overworking": "przepracowanie",
+    "fear_of_failure": "lęk przed porażką",
+    "need_for_control": "potrzeba kontroli",
+    "perfectionism": "perfekcjonizm",
     "unknown": "nieznane",
     "rough": "trudny",
     "okay": "ok",
@@ -244,7 +249,8 @@
     "pornography": "Pornografia",
     "gaming": "Gaming",
     "social_media": "Media społecznościowe",
-    "shopping": "Zakupy"
+    "shopping": "Zakupy",
+    "work": "Uzależnienie od pracy"
   },
   "stages": {
     "curious": "Po prostu ciekawość",
@@ -262,6 +268,12 @@
     "90": "3 miesiące",
     "180": "6 miesięcy",
     "365": "1 rok"
+  },
+  "workMilestones": {
+    "firstEveningOff": "Pierwsza wolna noc",
+    "firstWeekendUnplugged": "Pierwszy weekend bez pracy",
+    "oneWeekHealthyHours": "1 tydzień zdrowych godzin",
+    "oneMonthBalanced": "1 miesiąc równowagi"
   },
   "days": {
     "Mon": "Pon",

@@ -122,6 +122,7 @@
     "thisWeek": "Esta semana — vezes resistiu",
     "milestones": "Marcos",
     "daysClean": "{{count}} dias limpo",
+    "workMilestones": "Marcos de equilíbrio trabalho-vida",
     "dLeft": "{{count}}d restantes",
     "reportTitle": "Relatório do terapeuta",
     "reportDesc": "Selecione as entradas do diário a incluir. Sua sequência, gráfico de humor e pontuação de estabilidade sempre são incluídos.",
@@ -173,6 +174,10 @@
     "celebration": "celebração",
     "physical": "físico",
     "seeing_others": "ver outros",
+    "overworking": "excesso de trabalho",
+    "fear_of_failure": "medo de falhar",
+    "need_for_control": "necessidade de controle",
+    "perfectionism": "perfeccionismo",
     "unknown": "desconhecido",
     "rough": "difícil",
     "okay": "ok",
@@ -238,7 +243,8 @@
     "pornography": "Pornografia",
     "gaming": "Games",
     "social_media": "Redes sociais",
-    "shopping": "Compras"
+    "shopping": "Compras",
+    "work": "Vício em trabalho"
   },
   "stages": {
     "curious": "Apenas curioso",
@@ -256,6 +262,12 @@
     "90": "3 meses",
     "180": "6 meses",
     "365": "1 ano"
+  },
+  "workMilestones": {
+    "firstEveningOff": "Primeira noite livre",
+    "firstWeekendUnplugged": "Primeiro fim de semana desconectado",
+    "oneWeekHealthyHours": "1 semana de horas saudáveis",
+    "oneMonthBalanced": "1 mês equilibrado"
   },
   "days": {
     "Mon": "Seg",

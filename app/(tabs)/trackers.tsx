@@ -29,6 +29,7 @@ const CATEGORY_ICONS: Record<string, string> = {
   gaming:       '🎮',
   social_media: '📱',
   shopping:     '🛍️',
+  work:         '💼',
 };
 
 export default function TrackersScreen() {

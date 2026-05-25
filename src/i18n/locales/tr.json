@@ -122,6 +122,7 @@
     "thisWeek": "Bu hafta — direniş sayısı",
     "milestones": "Kilometre taşları",
     "daysClean": "{{count}} gün temiz",
+    "workMilestones": "İş-yaşam dengesi kilometre taşları",
     "dLeft": "{{count}}g kaldı",
     "reportTitle": "Terapist Raporu",
     "reportDesc": "Dahil edilecek günlük girişleri seçin. Seriniz, ruh hali grafiğiniz ve istikrar puanınız her zaman dahildir.",
@@ -173,6 +174,10 @@
     "celebration": "kutlama",
     "physical": "fiziksel",
     "seeing_others": "başkalarını görmek",
+    "overworking": "aşırı çalışma",
+    "fear_of_failure": "başarısızlık korkusu",
+    "need_for_control": "kontrol ihtiyacı",
+    "perfectionism": "mükemmeliyetçilik",
     "unknown": "bilinmiyor",
     "rough": "zor",
     "okay": "idare eder",
@@ -238,7 +243,8 @@
     "pornography": "Pornografi",
     "gaming": "Oyun",
     "social_media": "Sosyal medya",
-    "shopping": "Alışveriş"
+    "shopping": "Alışveriş",
+    "work": "İş bağımlılığı"
   },
   "stages": {
     "curious": "Sadece meraklı",
@@ -256,6 +262,12 @@
     "90": "3 ay",
     "180": "6 ay",
     "365": "1 yıl"
+  },
+  "workMilestones": {
+    "firstEveningOff": "İlk boş akşam",
+    "firstWeekendUnplugged": "İlk dijital detoks haftasonu",
+    "oneWeekHealthyHours": "1 hafta sağlıklı çalışma",
+    "oneMonthBalanced": "1 ay dengeli yaşam"
   },
   "days": {
     "Mon": "Pzt",

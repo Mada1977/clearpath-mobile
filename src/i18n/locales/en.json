@@ -122,6 +122,7 @@
     "thisWeek": "This week — times resisted",
     "milestones": "Milestones",
     "daysClean": "{{count}} days clean",
+    "workMilestones": "Work-Life Balance Milestones",
     "dLeft": "{{count}}d left",
     "reportTitle": "Therapist Report",
     "reportDesc": "Select journal entries to include. Your streak, mood chart, and stability score are always included.",
@@ -173,6 +174,10 @@
     "celebration": "celebration",
     "physical": "physical",
     "seeing_others": "seeing others",
+    "overworking": "overworking",
+    "fear_of_failure": "fear of failure",
+    "need_for_control": "need for control",
+    "perfectionism": "perfectionism",
     "unknown": "unknown",
     "rough": "rough",
     "okay": "okay",
@@ -238,7 +243,8 @@
     "pornography": "Pornography",
     "gaming": "Gaming",
     "social_media": "Social Media",
-    "shopping": "Shopping"
+    "shopping": "Shopping",
+    "work": "Work Addiction"
   },
   "stages": {
     "curious": "Just curious",
@@ -256,6 +262,12 @@
     "90": "3 months",
     "180": "6 months",
     "365": "1 year"
+  },
+  "workMilestones": {
+    "firstEveningOff": "First evening off",
+    "firstWeekendUnplugged": "First weekend unplugged",
+    "oneWeekHealthyHours": "1 week of healthy hours",
+    "oneMonthBalanced": "1 month balanced"
   },
   "days": {
     "Mon": "Mon",

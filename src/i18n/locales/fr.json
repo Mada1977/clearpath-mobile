@@ -122,6 +122,7 @@
     "thisWeek": "Cette semaine — résistances",
     "milestones": "Jalons",
     "daysClean": "{{count}} jours sans",
+    "workMilestones": "Jalons équilibre vie pro-perso",
     "dLeft": "{{count}}j restants",
     "reportTitle": "Rapport thérapeute",
     "reportDesc": "Sélectionnez les entrées à inclure. La série, le graphique d'humeur et le score de stabilité sont toujours inclus.",
@@ -173,6 +174,10 @@
     "celebration": "célébration",
     "physical": "physique",
     "seeing_others": "voir les autres",
+    "overworking": "surmenage",
+    "fear_of_failure": "peur de l'échec",
+    "need_for_control": "besoin de contrôle",
+    "perfectionism": "perfectionnisme",
     "unknown": "inconnu",
     "rough": "difficile",
     "okay": "okay",
@@ -238,7 +243,8 @@
     "pornography": "Pornographie",
     "gaming": "Jeux vidéo",
     "social_media": "Réseaux sociaux",
-    "shopping": "Shopping"
+    "shopping": "Shopping",
+    "work": "Addiction au travail"
   },
   "stages": {
     "curious": "Curieux",
@@ -256,6 +262,12 @@
     "90": "3 mois",
     "180": "6 mois",
     "365": "1 an"
+  },
+  "workMilestones": {
+    "firstEveningOff": "Première soirée déconnectée",
+    "firstWeekendUnplugged": "Premier week-end déconnecté",
+    "oneWeekHealthyHours": "1 semaine d'horaires sains",
+    "oneMonthBalanced": "1 mois équilibré"
   },
   "days": {
     "Mon": "Lun",

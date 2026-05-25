@@ -22,8 +22,9 @@ export const ADDICTIONS = [
   { value: 'gambling',     label: 'Gambling'     },
   { value: 'pornography',  label: 'Pornography'  },
   { value: 'gaming',       label: 'Gaming'       },
-  { value: 'social_media', label: 'Social Media' },
-  { value: 'shopping',     label: 'Shopping'     },
+  { value: 'social_media', label: 'Social Media'   },
+  { value: 'shopping',     label: 'Shopping'      },
+  { value: 'work',         label: 'Work Addiction' },
 ];
 
 export const STAGES = [

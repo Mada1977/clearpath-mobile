@@ -122,6 +122,7 @@
     "thisWeek": "Diese Woche — mal widerstanden",
     "milestones": "Meilensteine",
     "daysClean": "{{count}} Tage clean",
+    "workMilestones": "Meilensteine Work-Life-Balance",
     "dLeft": "{{count}}T übrig",
     "reportTitle": "Therapeutenbericht",
     "reportDesc": "Wähle Tagebucheinträge zum Einschließen. Deine Serie, Stimmungsdiagramm und Stabilitätswert sind immer enthalten.",
@@ -173,6 +174,10 @@
     "celebration": "Feier",
     "physical": "Körperlich",
     "seeing_others": "Andere sehen",
+    "overworking": "Überarbeitung",
+    "fear_of_failure": "Versagensangst",
+    "need_for_control": "Kontrollbedürfnis",
+    "perfectionism": "Perfektionismus",
     "unknown": "Unbekannt",
     "rough": "Schwierig",
     "okay": "Okay",
@@ -238,7 +243,8 @@
     "pornography": "Pornografie",
     "gaming": "Gaming",
     "social_media": "Soziale Medien",
-    "shopping": "Shopping"
+    "shopping": "Shopping",
+    "work": "Arbeitssucht"
   },
   "stages": {
     "curious": "Nur neugierig",
@@ -256,6 +262,12 @@
     "90": "3 Monate",
     "180": "6 Monate",
     "365": "1 Jahr"
+  },
+  "workMilestones": {
+    "firstEveningOff": "Erster freier Abend",
+    "firstWeekendUnplugged": "Erstes freies Wochenende",
+    "oneWeekHealthyHours": "1 Woche gesunde Arbeitszeiten",
+    "oneMonthBalanced": "1 Monat ausgeglichen"
   },
   "days": {
     "Mon": "Mo",
