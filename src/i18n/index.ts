@@ -13,6 +13,7 @@ import ro from './locales/ro.json';
 import nl from './locales/nl.json';
 import pl from './locales/pl.json';
 import tr from './locales/tr.json';
+import ko from './locales/ko.json';
 
 const RTL_LANGS = new Set(['ar']);
 
@@ -32,6 +33,7 @@ i18n
       nl: { translation: nl },
       pl: { translation: pl },
       tr: { translation: tr },
+      ko: { translation: ko },
     },
     lng: 'en',
     fallbackLng: 'en',
